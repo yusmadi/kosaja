@@ -6,18 +6,21 @@ use App\Controllers\BaseController;
 use App\Models\ListingModel;
 use App\Models\UnitModel;
 use App\Models\PropertyModel;
+use App\Models\AuditLogModel;
 
 class Listings extends BaseController
 {
     protected $listingModel;
     protected $unitModel;
     protected $propertyModel;
+    protected $auditModel;
 
     public function __construct()
     {
         $this->listingModel  = new ListingModel();
         $this->unitModel     = new UnitModel();
         $this->propertyModel = new PropertyModel();
+        $this->auditModel    = new AuditLogModel();
     }
 
     /**
@@ -141,7 +144,7 @@ class Listings extends BaseController
         $priceMonthly = $this->request->getPost('price_monthly');
         $priceYearly  = $this->request->getPost('price_yearly');
 
-        $this->listingModel->insert([
+        $newListingId = $this->listingModel->insert([
             'unit_id'            => $unitId,
             'title'              => $this->request->getPost('title'),
             'description'        => $this->request->getPost('description'),
@@ -149,6 +152,18 @@ class Listings extends BaseController
             'price_yearly'       => !empty($priceYearly) ? (float) $priceYearly : null,
             'publication_status' => $publicationStatus,
         ]);
+
+        $providerId = session()->get('user_id') ?? 3;
+        $title      = $this->request->getPost('title');
+        $this->auditModel->record(
+            $providerId,
+            ($publicationStatus === 'pending_review' ? 'SUBMIT_LISTING_REVIEW' : 'CREATE_LISTING_DRAFT'),
+            'listings',
+            $newListingId,
+            null,
+            ['title' => $title, 'status' => $publicationStatus],
+            "Mitra provider membuat iklan listing baru: '{$title}' (Status: " . ($publicationStatus === 'pending_review' ? 'Menunggu Review Admin' : 'Draf') . ")"
+        );
 
         $statusMsg = ($publicationStatus === 'pending_review')
             ? 'Listing berhasil dibuat dan diajukan ke Admin untuk ditinjau (Pending Review)!'
@@ -244,6 +259,16 @@ class Listings extends BaseController
             'publication_status' => 'pending_review',
             'rejection_reason'   => null,
         ]);
+
+        $this->auditModel->record(
+            $providerId,
+            'SUBMIT_LISTING_REVIEW',
+            'listings',
+            $listingId,
+            ['publication_status' => $listing['publication_status']],
+            ['publication_status' => 'pending_review'],
+            "Mitra provider mengajukan listing '{$listing['title']}' untuk ditinjau oleh Admin Daerah."
+        );
 
         return redirect()->back()->with('success', 'Listing telah diajukan ke Admin untuk proses peninjauan!');
     }

@@ -25,6 +25,10 @@ class RoleFilter implements FilterInterface
                     return;
                 }
 
+                if ($userRole === 'admin_daerah') {
+                    return redirect()->to('/admin/dashboard')->with('error', 'Akses ditolak: Menu ini adalah wewenang eksklusif Super Administrator.');
+                }
+
                 return redirect()->to('/')->with('error', 'Akses ditolak: Anda tidak memiliki wewenang untuk mengakses halaman ini.');
             }
         }

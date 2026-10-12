@@ -68,9 +68,9 @@
 <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-4" style="background-color: #ecfeff; color: #0891b2;">
     <i class="fas fa-gift fa-2x mr-3"></i>
     <div>
-        <h6 class="font-weight-bold mb-1">Promo Bebas Biaya Listing 6 Bulan Aktif!</h6>
+        <h6 class="font-weight-bold mb-1">Promo Bebas Biaya Listing (30 Hari / Hingga Transaksi Sewa Pertama) Aktif!</h6>
         <p class="mb-0 text-sm">
-            Properti Anda bebas potongan biaya listing platform hingga tanggal <strong><?= date('d M Y', strtotime($profile['free_period_end'] ?? '+6 months')) ?></strong>. Nikmati 100% pendapatan sewa langsung ke rekening Anda.
+            Properti Anda bebas potongan biaya listing platform hingga tanggal <strong><?= date('d M Y', strtotime($profile['free_period_end'] ?? '+30 days')) ?></strong> atau hingga transaksi sewa pertama Anda berhasil. Nikmati 100% pendapatan sewa langsung ke rekening Anda.
         </p>
     </div>
 </div>
@@ -114,6 +114,83 @@
         </div>
     </div>
 </div>
+
+<!-- Section: Okupansi & Kapasitas Listing Properti (Sprint 7) -->
+<div class="row mb-4">
+    <!-- Tingkat Okupansi -->
+    <div class="col-lg-4 col-md-6 mb-3 mb-lg-0">
+        <div class="card h-100 shadow-sm border-0" style="border-top: 4px solid #0d9488 !important;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-uppercase text-muted font-weight-bold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Tingkat Okupansi</span>
+                    <span class="badge badge-pill <?= ($stats['occupancy_rate'] >= 70) ? 'badge-success' : (($stats['occupancy_rate'] >= 30) ? 'badge-info' : 'badge-warning') ?>">
+                        <?= $stats['occupancy_rate'] >= 70 ? 'Optimal' : ($stats['occupancy_rate'] >= 30 ? 'Sedang' : 'Tersedia Banyak') ?>
+                    </span>
+                </div>
+                <div class="d-flex align-items-baseline mb-3">
+                    <h2 class="display-5 font-weight-bold mb-0 text-teal"><?= $stats['occupancy_rate'] ?>%</h2>
+                    <span class="text-muted ml-2 small">terisi dari <?= $stats['total_units'] ?> kamar</span>
+                </div>
+                <div class="progress mb-3" style="height: 10px; border-radius: 6px;">
+                    <div class="progress-bar bg-teal" role="progressbar" style="width: <?= $stats['occupancy_rate'] ?>%;" aria-valuenow="<?= $stats['occupancy_rate'] ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="d-flex justify-content-between text-xs text-muted pt-1 border-top">
+                    <span><i class="fas fa-circle text-teal mr-1"></i> Terisi: <strong><?= $stats['occupied_units'] ?></strong></span>
+                    <span><i class="fas fa-circle text-warning mr-1"></i> Booking: <strong><?= $stats['reserved_units'] ?></strong></span>
+                    <span><i class="fas fa-circle text-success mr-1"></i> Kosong: <strong><?= $stats['available_units'] ?></strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kapasitas Listing Platform -->
+    <div class="col-lg-4 col-md-6 mb-3 mb-lg-0">
+        <div class="card h-100 shadow-sm border-0" style="border-top: 4px solid #3b82f6 !important;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-uppercase text-muted font-weight-bold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Kapasitas Listing (Free Tier)</span>
+                    <span class="badge badge-pill badge-primary">Free Tier Kuota</span>
+                </div>
+                <div class="d-flex align-items-baseline mb-3">
+                    <h2 class="display-5 font-weight-bold mb-0 text-primary"><?= $stats['total_listings'] ?> <small class="text-muted font-weight-normal h5">/ <?= $stats['max_free_listings'] ?></small></h2>
+                    <span class="text-muted ml-2 small">slot iklan terpakai</span>
+                </div>
+                <div class="progress mb-3" style="height: 10px; border-radius: 6px;">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $stats['listing_capacity_percent'] ?>%;" aria-valuenow="<?= $stats['listing_capacity_percent'] ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="d-flex justify-content-between text-xs text-muted pt-1 border-top">
+                    <span><i class="fas fa-check-circle text-success mr-1"></i> Published: <strong><?= $stats['published_listings'] ?></strong></span>
+                    <span><i class="fas fa-box-archive text-primary mr-1"></i> Sisa Slot: <strong><?= $stats['remaining_capacity'] ?> Iklan</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pendapatan & Kontrak Aktif -->
+    <div class="col-lg-4 col-md-12">
+        <div class="card h-100 shadow-sm border-0" style="border-top: 4px solid #10b981 !important;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-uppercase text-muted font-weight-bold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Omzet Sewa & Kontrak</span>
+                    <span class="badge badge-pill badge-success"><?= $stats['active_contracts_count'] ?> Kontrak Aktif</span>
+                </div>
+                <div class="d-flex align-items-baseline mb-3">
+                    <h3 class="font-weight-bold mb-0 text-success">Rp <?= number_format($stats['monthly_revenue'], 0, ',', '.') ?></h3>
+                    <span class="text-muted ml-1 small">/ bln</span>
+                </div>
+                <p class="text-muted small mb-3">
+                    Total realisasi penerimaan sewa terbayar: <strong class="text-dark">Rp <?= number_format($stats['invoice_stats']['paid_amount'], 0, ',', '.') ?></strong>
+                </p>
+                <div class="d-flex justify-content-between text-xs text-muted pt-1 border-top">
+                    <span><i class="fas fa-file-invoice-dollar text-success mr-1"></i> Terbayar: <strong><?= $stats['invoice_stats']['paid'] ?></strong></span>
+                    <span><i class="fas fa-clock text-warning mr-1"></i> Menunggu: <strong><?= $stats['invoice_stats']['pending'] ?></strong></span>
+                    <span><i class="fas fa-circle-exclamation text-danger mr-1"></i> Overdue: <strong><?= $stats['invoice_stats']['overdue'] ?></strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <!-- Main Row: Unit list & Applications -->
 <div class="row">
@@ -221,16 +298,40 @@
             </div>
         </div>
 
-        <div class="card shadow-sm" id="applications">
-            <div class="card-header border-0">
+        <div class="card card-outline card-teal shadow-sm" id="applications">
+            <div class="card-header border-0 d-flex justify-content-between align-items-center">
                 <h3 class="card-title font-weight-bold">
                     <i class="fas fa-inbox text-teal mr-2"></i> Pengajuan Masuk Penyewa
                 </h3>
+                <a href="<?= base_url('/provider/applications') ?>" class="btn btn-xs btn-outline-teal font-weight-bold">
+                    Lihat Semua
+                </a>
             </div>
-            <div class="card-body text-sm text-center py-4">
-                <i class="fas fa-envelope-open-text fa-3x text-muted mb-3"></i>
-                <h6 class="font-weight-bold">Belum Ada Pengajuan Baru</h6>
-                <p class="text-muted small mb-0">Pengajuan sewa dari calon penyewa yang masuk akan muncul di sini untuk persetujuan Anda.</p>
+            <div class="card-body p-0 text-sm">
+                <?php if (!empty($recentApplications)): ?>
+                    <ul class="products-list product-list-in-card pl-2 pr-2">
+                        <?php foreach ($recentApplications as $app): ?>
+                            <li class="item py-2 border-bottom">
+                                <div class="product-info ml-2">
+                                    <a href="<?= base_url('/provider/applications/' . $app['id']) ?>" class="product-title font-weight-bold text-dark">
+                                        <?= esc($app['tenant_name']) ?>
+                                        <span class="badge float-right <?= $app['status'] === 'pending' ? 'badge-warning' : ($app['status'] === 'approved' ? 'badge-success' : 'badge-secondary') ?>">
+                                            <?= ucfirst($app['status']) ?>
+                                        </span>
+                                    </a>
+                                    <span class="product-description text-muted small">
+                                        Kamar <?= esc($app['unit_name']) ?> • Mulai <?= date('d M Y', strtotime($app['start_date'])) ?>
+                                    </span>
+                                </div>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php else: ?>
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-envelope-open-text fa-2x mb-2 opacity-50"></i>
+                        <p class="mb-0 small">Belum ada pengajuan sewa baru yang masuk.</p>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

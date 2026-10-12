@@ -114,4 +114,48 @@ class ListingModel extends Model
     {
         return $this->where('unit_id', $unitId)->first();
     }
+
+    /**
+     * Search published listings with dynamic filters (Keyword, Gender, Price, Region)
+     */
+    public function searchListings(array $filters = []): array
+    {
+        $builder = $this->select('listings.*, 
+                units.name as unit_name, units.size as unit_size, units.floor as unit_floor, units.status as unit_status,
+                properties.id as property_id, properties.name as property_name, properties.type, properties.target_gender, properties.address,
+                regions.name as region_name,
+                (SELECT photo_url FROM property_photos WHERE property_photos.property_id = properties.id ORDER BY is_primary DESC, id ASC LIMIT 1) as photo_url')
+            ->join('units', 'units.id = listings.unit_id')
+            ->join('properties', 'properties.id = units.property_id')
+            ->join('regions', 'regions.id = properties.region_id', 'left')
+            ->where('listings.publication_status', 'published');
+
+        if (! empty($filters['keyword'])) {
+            $kw = $filters['keyword'];
+            $builder->groupStart()
+                ->like('listings.title', $kw)
+                ->orLike('listings.description', $kw)
+                ->orLike('properties.name', $kw)
+                ->orLike('properties.address', $kw)
+                ->groupEnd();
+        }
+
+        if (! empty($filters['gender'])) {
+            $builder->where('properties.target_gender', $filters['gender']);
+        }
+
+        if (! empty($filters['max_price'])) {
+            $builder->where('listings.price_monthly <=', (float) $filters['max_price']);
+        }
+
+        if (! empty($filters['min_price'])) {
+            $builder->where('listings.price_monthly >=', (float) $filters['min_price']);
+        }
+
+        if (! empty($filters['region_id'])) {
+            $builder->where('properties.region_id', (int) $filters['region_id']);
+        }
+
+        return $builder->orderBy('listings.id', 'DESC')->findAll();
+    }
 }

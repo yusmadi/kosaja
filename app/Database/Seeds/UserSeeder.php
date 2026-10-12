@@ -32,6 +32,7 @@ class UserSeeder extends Seeder
                 'whatsapp'   => '081234567891',
                 'gender'     => 'L',
                 'role'       => 'admin_daerah',
+                'region_id'  => 2,
                 'status'     => 'active',
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -85,7 +86,7 @@ class UserSeeder extends Seeder
             'id_card_photo'       => 'ktp_ahmad.jpg',
             'bank_name'           => 'Bank Syariah Indonesia (BSI)',
             'bank_account_number' => '7123456789',
-            'free_period_end'     => date('Y-m-d', strtotime('+6 months')),
+            'free_period_end'     => date('Y-m-d', strtotime('+30 days')),
             'created_at'          => $now,
             'updated_at'          => $now,
         ];

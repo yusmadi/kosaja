@@ -34,7 +34,7 @@ class Onboarding extends BaseController
             $this->providerProfileModel->insert([
                 'user_id'             => $userId,
                 'verification_status' => 'pending',
-                'free_period_end'     => date('Y-m-d', strtotime('+6 months')),
+                'free_period_end'     => $this->providerProfileModel->calculateDefaultFreePeriodEnd(),
             ]);
             $profile = $this->providerProfileModel->getByUserId($userId);
         }
@@ -108,7 +108,7 @@ class Onboarding extends BaseController
             $this->providerProfileModel->update($profile['id'], $updateData);
         } else {
             $updateData['user_id'] = $userId;
-            $updateData['free_period_end'] = date('Y-m-d', strtotime('+6 months'));
+            $updateData['free_period_end'] = $this->providerProfileModel->calculateDefaultFreePeriodEnd();
             $this->providerProfileModel->insert($updateData);
         }
 

@@ -23,3 +23,7 @@ ini_set('display_errors', '0');
  | release of the framework.
  */
 defined('CI_DEBUG') || define('CI_DEBUG', false);
+
+// Set default timezone for Indonesia (WIB)
+date_default_timezone_set('Asia/Jakarta');
+

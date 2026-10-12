@@ -4,8 +4,16 @@ use CodeIgniter\Router\RouteCollection;
 
 /** @var RouteCollection $routes */
 
-// Public Routes (Tenant & General)
+// Public Routes (Tenant & General Discovery)
 $routes->get('/', 'Home::index');
+$routes->get('search', 'Listing::search');
+$routes->get('listing/(:num)', 'Listing::show/$1');
+$routes->get('listings/(:num)', 'Listing::show/$1');
+
+// Tenant Favorites
+$routes->get('favorites', 'Favorites::index');
+$routes->post('favorites/toggle/(:num)', 'Favorites::toggle/$1');
+$routes->post('favorites/remove/(:num)', 'Favorites::remove/$1');
 
 // Authentication Routes
 $routes->get('login', 'Auth::login');
@@ -21,24 +29,76 @@ $routes->group('profile', ['filter' => 'auth'], static function ($routes) {
     $routes->post('update-password', 'Profile::updatePassword');
 });
 
-// Admin Backoffice Routes (Guarded by RBAC: super_admin, admin_daerah)
+$routes->get('switch-role/(:segment)', 'Auth::switchRole/$1');
+
+// Admin Backoffice Common Routes (Guarded by RBAC: super_admin, admin_daerah)
 $routes->group('admin', ['filter' => 'role:super_admin,admin_daerah'], static function ($routes) {
     $routes->get('dashboard', 'Admin\Dashboard::index');
-    
-    // IAM & User Management
-    $routes->get('users', 'Admin\Users::index');
-    $routes->get('users/toggle/(:num)', 'Admin\Users::toggleStatus/$1');
 
-    // Region Hierarchy Management
-    $routes->get('regions', 'Admin\Regions::index');
-    $routes->post('regions/create', 'Admin\Regions::create');
-    $routes->get('regions/delete/(:num)', 'Admin\Regions::delete/$1');
-
-    // Provider Verification (KYC)
+    // Provider Verification (KYC - Scoped for Admin Daerah, Global for Super Admin)
     $routes->get('providers', 'Admin\Providers::index');
     $routes->post('providers/verify/(:num)', 'Admin\Providers::verify/$1');
     $routes->post('providers/reject/(:num)', 'Admin\Providers::reject/$1');
     $routes->post('providers/suspend/(:num)', 'Admin\Providers::suspend/$1');
+
+    // Listing Moderation (Scoped for Admin Daerah, Global for Super Admin)
+    $routes->get('listings', 'Admin\Listings::index');
+    $routes->get('listings/(:num)', 'Admin\Listings::show/$1');
+    $routes->post('listings/approve/(:num)', 'Admin\Listings::approve/$1');
+    $routes->post('listings/reject/(:num)', 'Admin\Listings::reject/$1');
+    $routes->post('listings/toggle/(:num)', 'Admin\Listings::toggle/$1');
+
+    // Dispute Management & Refund Handling
+    $routes->get('disputes', 'Admin\Disputes::index');
+    $routes->get('disputes/(:num)', 'Admin\Disputes::show/$1');
+    $routes->post('disputes/investigate/(:num)', 'Admin\Disputes::investigate/$1');
+    $routes->post('disputes/decide/(:num)', 'Admin\Disputes::decide/$1');
+    $routes->post('disputes/escalate/(:num)', 'Admin\Disputes::escalate/$1');
+    $routes->get('refunds', 'Admin\Disputes::refunds');
+
+    // Immutable Audit Trail Viewer
+    $routes->get('audit', 'Admin\AuditTrail::index');
+
+    // Admin Daerah Dedicated Features (ADM-06, ADM-10, ADM-11)
+    $routes->get('reports', 'Admin\Reports::index');
+    $routes->get('reports/(:num)', 'Admin\Reports::show/$1');
+    $routes->post('reports/investigate/(:num)', 'Admin\Reports::investigate/$1');
+    $routes->post('reports/resolve/(:num)', 'Admin\Reports::resolve/$1');
+
+    $routes->get('restrictions', 'Admin\Restrictions::index');
+    $routes->post('restrictions/apply', 'Admin\Restrictions::apply');
+    $routes->get('restrictions/lift/(:num)', 'Admin\Restrictions::lift/$1');
+
+    $routes->get('regional-reports', 'Admin\RegionalReports::index');
+});
+
+// Super Admin Exclusive Backoffice Routes (Guarded by RBAC: super_admin only)
+$routes->group('admin', ['filter' => 'role:super_admin'], static function ($routes) {
+    // IAM & User Management (SA-02)
+    $routes->get('users', 'Admin\Users::index');
+    $routes->post('users/create', 'Admin\Users::create');
+    $routes->get('users/toggle/(:num)', 'Admin\Users::toggleStatus/$1');
+    $routes->post('users/assign-region/(:num)', 'Admin\Users::assignRegion/$1');
+
+    // Region Hierarchy Management (SA-04)
+    $routes->get('regions', 'Admin\Regions::index');
+    $routes->post('regions/create', 'Admin\Regions::create');
+    $routes->get('regions/delete/(:num)', 'Admin\Regions::delete/$1');
+
+    // Global Financial Transactions Registry (SA-06)
+    $routes->get('transactions', 'Admin\Transactions::index');
+
+    // Provider Payout Settlements (SA-07)
+    $routes->get('settlements', 'Admin\Settlements::index');
+    $routes->post('settlements/process/(:num)', 'Admin\Settlements::process/$1');
+
+    // Platform Monetization & Pricing Policies (SA-10)
+    $routes->get('monetization', 'Admin\Monetization::index');
+    $routes->post('monetization/update', 'Admin\Monetization::update');
+
+    // Platform System Configuration & SLA (SA-11)
+    $routes->get('configuration', 'Admin\Configuration::index');
+    $routes->post('configuration/update', 'Admin\Configuration::update');
 });
 
 // Provider Dashboard & Inventory Routes (Guarded by RBAC: provider, super_admin)
@@ -79,5 +139,58 @@ $routes->group('provider', ['filter' => 'role:provider,super_admin'], static fun
     $routes->post('listings/submit-review/(:num)', 'Provider\Listings::submitReview/$1');
     $routes->post('listings/toggle-status/(:num)', 'Provider\Listings::toggleStatus/$1');
     $routes->post('listings/delete/(:num)', 'Provider\Listings::delete/$1');
+
+    // Rental Applications Review & Decision (Sprint 5)
+    $routes->get('applications', 'Provider\Applications::index');
+    $routes->get('applications/(:num)', 'Provider\Applications::show/$1');
+    $routes->post('applications/approve/(:num)', 'Provider\Applications::approve/$1');
+    $routes->post('applications/reject/(:num)', 'Provider\Applications::reject/$1');
+    $routes->get('reservations', 'Provider\Applications::reservations');
+
+    // Contracts Management (Sprint 6)
+    $routes->get('contracts', 'Provider\Contracts::index');
+    $routes->get('contracts/(:num)', 'Provider\Contracts::show/$1');
 });
+
+// Payment Gateway Webhook (Public POST endpoint)
+$routes->post('webhook/payment', 'Webhook::payment');
+
+// Tenant Rental Application, Booking, Billing & Contract Routes (Guarded by auth filter)
+$routes->group('', ['filter' => 'auth'], static function ($routes) {
+    // Tenant Dashboard & Invoices (Sprint 7)
+    $routes->get('tenant/dashboard', 'Tenant\Dashboard::index');
+    $routes->post('tenant/invoices/pay/(:num)', 'Tenant\Dashboard::payInvoice/$1');
+    $routes->post('tenant/disputes/create', 'Tenant\Dashboard::createDispute');
+
+    // Role-based dashboard redirect helper
+    $routes->get('dashboard', static function() {
+        $role = session()->get('role');
+        if ($role === 'provider') return redirect()->to(base_url('/provider/dashboard'));
+        if (in_array($role, ['super_admin', 'admin_daerah'])) return redirect()->to(base_url('/admin/dashboard'));
+        return redirect()->to(base_url('/tenant/dashboard'));
+    });
+
+    // Rental Application Form & Actions
+    $routes->get('apply/(:num)', 'Application::create/$1');
+    $routes->post('apply/(:num)', 'Application::store/$1');
+
+    // Tenant Applications Tracking
+    $routes->get('applications', 'Application::index');
+    $routes->get('applications/(:num)', 'Application::show/$1');
+    $routes->post('applications/cancel/(:num)', 'Application::cancel/$1');
+
+    // Reservation Checkout & Pricing Engine
+    $routes->get('checkout/(:num)', 'Checkout::show/$1');
+    $routes->post('checkout/process/(:num)', 'Checkout::process/$1');
+    $routes->get('checkout/simulation/(:num)', 'Checkout::simulation/$1');
+    $routes->post('checkout/simulation-execute/(:num)', 'Checkout::executeSimulation/$1');
+    $routes->get('reservations/(:num)', 'Checkout::show/$1');
+
+    // Digital Rental Contracts (Sprint 6)
+    $routes->get('contracts', 'Contract::index');
+    $routes->get('contracts/(:num)', 'Contract::show/$1');
+});
+
+
+
 

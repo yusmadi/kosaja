@@ -20,18 +20,18 @@
 <!-- Search Box Section (Overlapping Hero) -->
 <div class="container">
     <div class="search-filter-box">
-        <form id="searchForm" class="row g-3 align-items-end">
+        <form id="searchForm" action="<?= base_url('/search') ?>" method="get" class="row g-3 align-items-end">
             <div class="col-md-4">
                 <label for="searchKeyword" class="search-field-label">
                     <i class="bi bi-geo-alt me-1 text-primary"></i> Cari Lokasi / Kampus / Nama Kos
                 </label>
-                <input type="text" id="searchKeyword" class="search-field-input" placeholder="Misal: UGM, Pogung, Seturan...">
+                <input type="text" name="keyword" id="searchKeyword" class="search-field-input" placeholder="Misal: UGM, Pogung, Seturan...">
             </div>
             <div class="col-md-3">
                 <label for="searchType" class="search-field-label">
                     <i class="bi bi-building me-1 text-primary"></i> Tipe Properti
                 </label>
-                <select id="searchType" class="search-field-input">
+                <select name="type" id="searchType" class="search-field-input">
                     <option value="">Semua Tipe</option>
                     <option value="kos">Kos / Kamar</option>
                     <option value="kontrakan">Kontrakan Rumah</option>
@@ -42,7 +42,7 @@
                 <label for="searchGender" class="search-field-label">
                     <i class="bi bi-gender-ambiguous me-1 text-primary"></i> Target Penghuni
                 </label>
-                <select id="searchGender" class="search-field-input">
+                <select name="target_gender" id="searchGender" class="search-field-input">
                     <option value="">Semua Penghuni</option>
                     <option value="putri">Khusus Putri</option>
                     <option value="putra">Khusus Putra</option>
@@ -78,14 +78,24 @@
         <div class="row g-4" id="listingsContainer">
             <?php if (!empty($listings)): ?>
                 <?php foreach ($listings as $item): ?>
+                    <?php $isFav = in_array((int)$item['id'], $userFavorites ?? []); ?>
                     <div class="col-md-6 col-lg-4 property-card-col" 
                          data-gender="<?= esc($item['target_gender']) ?>" 
                          data-type="<?= esc($item['type']) ?>">
                         <div class="property-card">
-                            <div class="property-img-wrapper">
+                            <div class="property-img-wrapper position-relative">
                                 <img src="<?= base_url(esc($item['photo_url'] ?? 'assets/images/sample-kos-1.jpg')) ?>" 
                                      alt="<?= esc($item['title']) ?>" 
                                      class="property-img">
+                                
+                                <!-- Favorite Heart Button -->
+                                <button type="button" 
+                                        class="btn-favorite-icon <?= $isFav ? 'active' : '' ?>" 
+                                        title="<?= $isFav ? 'Hapus dari favorit' : 'Simpan ke favorit' ?>"
+                                        onclick="toggleFavorite(<?= $item['id'] ?>, this, event)">
+                                    <i class="bi <?= $isFav ? 'bi-heart-fill' : 'bi-heart' ?>"></i>
+                                </button>
+
                                 <!-- Gender Badge -->
                                 <span class="gender-badge <?= esc($item['target_gender']) ?>">
                                     <?php 
@@ -104,8 +114,13 @@
                                     <span><?= esc($item['region_name'] ?? 'Sleman, DIY') ?></span>
                                 </div>
                                 <h3 class="property-title">
-                                    <?= esc($item['title']) ?>
+                                    <a href="<?= base_url('/listing/' . $item['id']) ?>" class="text-decoration-none text-dark">
+                                        <?= esc($item['title']) ?>
+                                    </a>
                                 </h3>
+                                <div class="small text-muted mb-2">
+                                    <i class="bi bi-door-open me-1 text-teal"></i> <?= esc($item['unit_name']) ?> (<?= esc($item['unit_size'] ?? '3x4 m') ?>)
+                                </div>
                                 <p class="text-muted small mb-3 flex-grow-1" style="font-size: 0.85rem; line-height: 1.4;">
                                     <?= character_limiter(esc($item['description']), 85) ?>
                                 </p>
@@ -116,7 +131,7 @@
                                             <span>/ bln</span>
                                         </div>
                                     </div>
-                                    <a href="#" class="btn btn-sm btn-kosaja-outline">
+                                    <a href="<?= base_url('/listing/' . $item['id']) ?>" class="btn btn-sm btn-kosaja-outline">
                                         Detail <i class="bi bi-arrow-right ms-1"></i>
                                     </a>
                                 </div>
@@ -187,7 +202,7 @@
                 <div class="col-lg-8">
                     <h3 class="h2 fw-bold text-white mb-2">Punya Kos atau Kontrakan?</h3>
                     <p class="text-white-50 mb-0">
-                        Daftarkan properti Anda di KosAja. Nikmati **Gratis Biaya Listing selama 6 Bulan Pertama** bagi mitra pemilik baru.
+                        Daftarkan properti Anda di KosAja. Nikmati <strong>Gratis Biaya Listing 30 Hari Pertama</strong> atau hingga kamar pertama Anda terisi bagi mitra pemilik baru.
                     </p>
                 </div>
                 <div class="col-lg-4 text-lg-end">
@@ -202,7 +217,55 @@
 
 <?= $this->section('scripts') ?>
 <script>
-    // In-page quick helpers
-    console.log("KosAja Home View Loaded with <?= count($listings ?? []) ?> items.");
+    // Quick filter pill handler
+    document.querySelectorAll('.btn-quick-filter').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.btn-quick-filter').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const filter = this.dataset.filter;
+            
+            document.querySelectorAll('.property-card-col').forEach(card => {
+                if (filter === 'all' || card.dataset.gender === filter) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Favorite button handler
+    function toggleFavorite(listingId, btn, e) {
+        if (e) e.preventDefault();
+
+        fetch('<?= base_url('/favorites/toggle/') ?>' + listingId, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': '<?= csrf_hash() ?>'
+            }
+        })
+        .then(res => {
+            if (res.status === 401) {
+                window.location.href = '<?= base_url('/login') ?>';
+                return;
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (!data) return;
+            const icon = btn.querySelector('i');
+            if (data.is_favorited) {
+                btn.classList.add('active');
+                icon.className = 'bi bi-heart-fill';
+                btn.title = 'Hapus dari favorit';
+            } else {
+                btn.classList.remove('active');
+                icon.className = 'bi bi-heart';
+                btn.title = 'Simpan ke favorit';
+            }
+        })
+        .catch(err => console.error('Error toggling favorite:', err));
+    }
 </script>
 <?= $this->endSection() ?>

@@ -13,3 +13,31 @@
  *
  * @see: https://codeigniter.com/user_guide/extending/common.html
  */
+
+if (! function_exists('record_audit_log')) {
+    /**
+     * Record an audit event into audit_logs table
+     */
+    function record_audit_log(
+        string $action,
+        string $objectType,
+        int $objectId,
+        ?string $reason = null,
+        ?array $previousState = null,
+        ?array $newState = null,
+        ?int $actorId = null,
+        ?int $regionId = null
+    ) {
+        $auditModel = new \App\Models\AuditLogModel();
+        return $auditModel->record(
+            $actorId,
+            $action,
+            $objectType,
+            $objectId,
+            $previousState,
+            $newState,
+            $reason,
+            $regionId
+        );
+    }
+}

@@ -4,16 +4,19 @@ namespace App\Controllers;
 
 use App\Models\UserModel;
 use App\Models\ProviderProfileModel;
+use App\Models\AuditLogModel;
 
 class Auth extends BaseController
 {
     protected $userModel;
     protected $providerProfileModel;
+    protected $auditModel;
 
     public function __construct()
     {
-        $this->userModel = new UserModel();
+        $this->userModel            = new UserModel();
         $this->providerProfileModel = new ProviderProfileModel();
+        $this->auditModel           = new AuditLogModel();
     }
 
     /**
@@ -67,6 +70,17 @@ class Auth extends BaseController
             'gender'     => $user['gender'],
             'whatsapp'   => $user['whatsapp'],
         ]);
+
+        // Record Audit Trail
+        $this->auditModel->record(
+            (int) $user['id'],
+            'USER_LOGIN',
+            'users',
+            (int) $user['id'],
+            null,
+            ['role' => $user['role'], 'ip' => $this->request->getIPAddress()],
+            "Pengguna {$user['name']} (" . strtoupper(str_replace('_', ' ', $user['role'])) . ") berhasil masuk ke sistem KosAja."
+        );
 
         $redirectUrl = session()->get('redirect_url');
         if ($redirectUrl) {
@@ -154,9 +168,20 @@ class Auth extends BaseController
                 'verification_status' => 'pending',
                 'bank_name'           => $this->request->getPost('bank_name') ?? null,
                 'bank_account_number' => $this->request->getPost('bank_account_number') ?? null,
-                'free_period_end'     => date('Y-m-d', strtotime('+6 months')),
+                'free_period_end'     => $this->providerProfileModel->calculateDefaultFreePeriodEnd(),
             ]);
         }
+
+        // Record Audit Trail
+        $this->auditModel->record(
+            (int) $newUserId,
+            'USER_REGISTER',
+            'users',
+            (int) $newUserId,
+            null,
+            ['name' => $userData['name'], 'email' => $userData['email'], 'role' => $role],
+            "Pengguna baru {$userData['name']} mendaftar sebagai " . strtoupper(str_replace('_', ' ', $role)) . " di platform KosAja."
+        );
 
         return redirect()->to('/login')->with('success', 'Pendaftaran akun berhasil! Silakan masuk dengan email dan password Anda.');
     }
@@ -166,8 +191,72 @@ class Auth extends BaseController
      */
     public function logout()
     {
+        $userId = session()->get('user_id');
+        $name   = session()->get('name') ?? 'Pengguna';
+        $role   = session()->get('role') ?? 'user';
+
+        if ($userId) {
+            $this->auditModel->record(
+                (int) $userId,
+                'USER_LOGOUT',
+                'users',
+                (int) $userId,
+                null,
+                null,
+                "Pengguna {$name} (" . strtoupper(str_replace('_', ' ', $role)) . ") keluar (logout) dari sistem."
+            );
+        }
+
         session()->destroy();
         return redirect()->to('/login')->with('success', 'Anda telah berhasil keluar (logout).');
+    }
+
+    /**
+     * Quick Role Switcher for Testing (Super Admin vs Admin Daerah vs Provider vs Tenant)
+     */
+    public function switchRole(string $targetRole)
+    {
+        $db = \Config\Database::connect();
+        $targetUser = null;
+
+        if (is_numeric($targetRole)) {
+            $targetUser = $db->table('users')->where('id', (int) $targetRole)->get()->getRowArray();
+        } elseif ($targetRole === 'super_admin') {
+            $targetUser = $db->table('users')->where('role', 'super_admin')->get()->getRowArray();
+        } elseif ($targetRole === 'admin_daerah') {
+            $targetUser = $db->table('users')->where('role', 'admin_daerah')->get()->getRowArray();
+        } elseif ($targetRole === 'provider') {
+            $targetUser = $db->table('users')->where('role', 'provider')->get()->getRowArray();
+        } elseif ($targetRole === 'tenant') {
+            $targetUser = $db->table('users')->where('role', 'tenant')->get()->getRowArray();
+        }
+
+        if ($targetUser) {
+            session()->set([
+                'isLoggedIn' => true,
+                'user_id'    => $targetUser['id'],
+                'name'       => $targetUser['name'],
+                'email'      => $targetUser['email'],
+                'role'       => $targetUser['role'],
+                'gender'     => $targetUser['gender'],
+                'whatsapp'   => $targetUser['whatsapp'],
+            ]);
+
+            $this->auditModel->record(
+                (int) $targetUser['id'],
+                'USER_ROLE_SWITCHED',
+                'users',
+                (int) $targetUser['id'],
+                null,
+                ['role' => $targetUser['role']],
+                "Beralih role ke akun: {$targetUser['name']} (" . strtoupper(str_replace('_', ' ', $targetUser['role'])) . ")"
+            );
+
+            return $this->redirectBasedOnRole($targetUser['role'])
+                ->with('success', "Beralih ke mode: " . strtoupper(str_replace('_', ' ', $targetUser['role'])) . " ({$targetUser['name']})");
+        }
+
+        return redirect()->to('/login');
     }
 
     /**

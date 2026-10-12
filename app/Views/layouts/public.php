@@ -34,7 +34,12 @@
             <div class="collapse navbar-collapse" id="navMain">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
                     <li class="nav-item">
-                        <a class="nav-link nav-link-custom active" href="<?= base_url('/') ?>">Jelajah Properti</a>
+                        <a class="nav-link nav-link-custom" href="<?= base_url('/search') ?>">Cari Hunian</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom" href="<?= base_url('/favorites') ?>">
+                            <i class="bi bi-heart text-danger me-1"></i> Favorit
+                        </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link nav-link-custom" href="<?= base_url('/#keunggulan') ?>">Keunggulan</a>
@@ -53,6 +58,10 @@
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
                                 <li><h6 class="dropdown-header text-muted small"><?= esc(session()->get('email')) ?></h6></li>
                                 <li><a class="dropdown-item py-2" href="<?= base_url('/profile') ?>"><i class="bi bi-person-gear me-2 text-teal"></i> Profil & Pengaturan</a></li>
+                                <li><a class="dropdown-item py-2" href="<?= base_url('/tenant/dashboard') ?>"><i class="bi bi-speedometer2 me-2 text-teal"></i> Dasbor Penyewa Saya</a></li>
+                                <li><a class="dropdown-item py-2" href="<?= base_url('/favorites') ?>"><i class="bi bi-heart-fill me-2 text-danger"></i> Hunian Favorit Saya</a></li>
+                                <li><a class="dropdown-item py-2" href="<?= base_url('/applications') ?>"><i class="bi bi-journal-check me-2 text-primary"></i> Pengajuan Sewa Saya</a></li>
+                                <li><a class="dropdown-item py-2" href="<?= base_url('/contracts') ?>"><i class="bi bi-file-earmark-check me-2 text-success"></i> Kontrak Sewa Saya</a></li>
                                 <?php if (in_array(session()->get('role'), ['super_admin', 'admin_daerah'])): ?>
                                     <li><a class="dropdown-item py-2" href="<?= base_url('/admin/dashboard') ?>"><i class="bi bi-shield-lock me-2 text-danger"></i> Backoffice Admin</a></li>
                                 <?php endif; ?>

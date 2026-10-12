@@ -10,7 +10,14 @@
             <p class="text-muted small mb-0">Kelola hierarki wilayah KosAja (Provinsi &rarr; Kota/Kabupaten &rarr; Klaster/Kecamatan Operasional).</p>
         </div>
         <div class="col-sm-6 text-sm-right mt-2 mt-sm-0">
-            <button class="btn btn-teal text-white btn-sm shadow-sm" data-toggle="modal" data-target="#modalAddRegion">
+            <button type="button" 
+                    class="btn btn-teal text-white btn-sm shadow-sm" 
+                    data-toggle="modal" 
+                    data-bs-toggle="modal" 
+                    data-target="#modalAddRegion" 
+                    data-bs-target="#modalAddRegion"
+                    onclick="openModalCustom('modalAddRegion')"
+                    id="btnTambahWilayah">
                 <i class="fas fa-plus mr-1"></i> Tambah Wilayah Baru
             </button>
         </div>
@@ -64,9 +71,13 @@
                                             <?php if ($r['level'] === 'province'): ?>
                                                 <i class="fas fa-landmark text-primary mr-2"></i> <?= esc($r['name']) ?>
                                             <?php elseif ($r['level'] === 'city'): ?>
-                                                <span class="ml-3"><i class="fas fa-city text-info mr-2"></i> <?= esc($r['name']) ?></span>
+                                                <span class="ml-4 pl-1 text-dark">
+                                                    <i class="fas fa-level-up-alt fa-rotate-90 text-muted mr-2"></i><i class="fas fa-city text-info mr-1"></i> <?= esc($r['name']) ?>
+                                                </span>
                                             <?php else: ?>
-                                                <span class="ml-5"><i class="fas fa-location-dot text-danger mr-2"></i> <?= esc($r['name']) ?></span>
+                                                <span class="ml-5 pl-4 text-secondary">
+                                                    <i class="fas fa-level-up-alt fa-rotate-90 text-muted mr-2"></i><i class="fas fa-location-dot text-danger mr-1"></i> <?= esc($r['name']) ?>
+                                                </span>
                                             <?php endif; ?>
                                         </td>
                                         <td>
@@ -104,21 +115,21 @@
 </div>
 
 <!-- Modal Add Region -->
-<div class="modal fade" id="modalAddRegion" tabindex="-1">
+<div class="modal fade" id="modalAddRegion" tabindex="-1" aria-labelledby="modalAddRegionLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <form action="<?= base_url('/admin/regions/create') ?>" method="POST">
                 <?= csrf_field() ?>
                 <div class="modal-header bg-teal text-white">
-                    <h5 class="modal-title font-weight-bold"><i class="fas fa-plus-circle mr-2"></i> Tambah Wilayah Operasional</h5>
-                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                    <h5 class="modal-title font-weight-bold" id="modalAddRegionLabel"><i class="fas fa-plus-circle mr-2"></i> Tambah Wilayah Operasional</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close" onclick="closeModalCustom('modalAddRegion')">&times;</button>
                 </div>
                 <div class="modal-body text-sm">
-                    <div class="form-group">
+                    <div class="form-group mb-3">
                         <label for="name" class="font-weight-bold">Nama Wilayah <span class="text-danger">*</span></label>
                         <input type="text" name="name" id="name" class="form-control" placeholder="Contoh: Depok (Sleman) atau Kulon Progo" required>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group mb-3">
                         <label for="level" class="font-weight-bold">Tingkat Wilayah <span class="text-danger">*</span></label>
                         <select name="level" id="level" class="form-control" required>
                             <option value="operational">Operasional (Klaster Kampus / Area)</option>
@@ -126,19 +137,21 @@
                             <option value="province">Provinsi</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group mb-3">
                         <label for="parent_id" class="font-weight-bold">Wilayah Induk (Parent)</label>
                         <select name="parent_id" id="parent_id" class="form-control">
                             <option value="">-- Tidak Ada (Pusat) --</option>
                             <?php foreach ($provincesAndCities as $pc): ?>
-                                <option value="<?= esc($pc['id']) ?>"><?= esc($pc['name']) ?> (<?= esc($pc['level']) ?>)</option>
+                                <option value="<?= esc($pc['id']) ?>">
+                                    <?= ($pc['level'] === 'city' ? '&nbsp;&nbsp;&nbsp;&nbsp;↳ ' : '') . esc($pc['name']) ?> (<?= esc($pc['level'] === 'province' ? 'Provinsi' : 'Kota/Kab') ?>)
+                                </option>
                             <?php endforeach; ?>
                         </select>
                         <small class="form-text text-muted">Pilih Provinsi untuk Kota/Kabupaten, atau Kota/Kabupaten untuk Klaster Operasional.</small>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal" data-bs-dismiss="modal" onclick="closeModalCustom('modalAddRegion')">Batal</button>
                     <button type="submit" class="btn btn-teal text-white btn-sm"><i class="fas fa-save mr-1"></i> Simpan Wilayah</button>
                 </div>
             </form>

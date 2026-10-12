@@ -43,4 +43,41 @@ class ProviderProfileModel extends Model
     {
         return $this->where('user_id', $userId)->first();
     }
+
+    /**
+     * FR-PM-001: Initialize provider free period for 30 calendar days
+     */
+    public function calculateDefaultFreePeriodEnd(): string
+    {
+        return date('Y-m-d', strtotime('+30 days'));
+    }
+
+    /**
+     * FR-PM-002 & FR-PM-004: Complete free period earlier when first rental payment succeeds
+     * Grants 3 days transition grace period for provider to select paid package.
+     */
+    public function completeFreePeriodIfFirstRentalPaid(int $providerUserId): bool
+    {
+        $profile = $this->getByUserId($providerUserId);
+        if (! $profile) {
+            return false;
+        }
+
+        $today = date('Y-m-d');
+        // Check if free period is currently active (in the future)
+        if (! empty($profile['free_period_end']) && $profile['free_period_end'] > $today) {
+            // Set transition grace period: 3 calendar days from today (FR-PM-004)
+            $graceEnd = date('Y-m-d', strtotime('+3 days'));
+            // If original free_period_end was sooner than +3 days, keep it, otherwise shorten to graceEnd
+            $newEnd = ($profile['free_period_end'] < $graceEnd) ? $profile['free_period_end'] : $graceEnd;
+
+            $this->update($profile['id'], [
+                'free_period_end' => $newEnd,
+            ]);
+
+            return true;
+        }
+
+        return false;
+    }
 }

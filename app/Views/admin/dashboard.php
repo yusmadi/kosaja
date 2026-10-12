@@ -56,6 +56,46 @@
     </div>
 </div>
 
+<!-- Sprint 7: Financial Disputes & Audit Banner -->
+<div class="row mb-3">
+    <div class="col-sm-6 col-lg-4">
+        <div class="info-box shadow-sm border-left border-warning" style="border-left: 4px solid #f59e0b !important;">
+            <span class="info-box-icon bg-warning text-dark"><i class="fas fa-scale-balanced"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text font-weight-bold">Kasus Dispute Terbuka</span>
+                <span class="info-box-number"><?= $stats['open_disputes'] ?? 0 ?> <small>Kasus Mediasi</small></span>
+                <a href="<?= base_url('/admin/disputes') ?>" class="small text-muted font-weight-bold">
+                    Kelola Kasus <i class="fas fa-arrow-circle-right ml-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="info-box shadow-sm border-left border-danger" style="border-left: 4px solid #ef4444 !important;">
+            <span class="info-box-icon bg-danger"><i class="fas fa-hand-holding-dollar"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text font-weight-bold">Total Pengembalian Dana</span>
+                <span class="info-box-number text-danger font-weight-bold">Rp <?= number_format($stats['total_refunds_amount'] ?? 0, 0, ',', '.') ?></span>
+                <a href="<?= base_url('/admin/refunds') ?>" class="small text-muted font-weight-bold">
+                    Riwayat Refund <i class="fas fa-arrow-circle-right ml-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="info-box shadow-sm border-left border-teal" style="border-left: 4px solid #0d9488 !important;">
+            <span class="info-box-icon bg-teal text-white"><i class="fas fa-clock-rotate-left"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text font-weight-bold">Immutable Audit Trail</span>
+                <span class="info-box-number">Aktif & Persisten</span>
+                <a href="<?= base_url('/admin/audit') ?>" class="small text-teal font-weight-bold">
+                    Buka Log Viewer <i class="fas fa-arrow-circle-right ml-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Moderation & Verification Row -->
 <div class="row">
     <!-- Verifikasi Penyedia -->
@@ -192,11 +232,14 @@
     </div>
 
     <div class="col-lg-7" id="audit">
-        <div class="card shadow-sm">
-            <div class="card-header border-0">
-                <h3 class="card-title font-weight-bold">
+        <div class="card shadow-sm border-0">
+            <div class="card-header border-0 d-flex justify-content-between align-items-center">
+                <h3 class="card-title font-weight-bold mb-0">
                     <i class="fas fa-clock-rotate-left text-teal mr-2"></i> Immutable Audit Trail (System Logs)
                 </h3>
+                <a href="<?= base_url('/admin/audit') ?>" class="btn btn-xs btn-outline-teal font-weight-bold">
+                    Lihat Semua Log (Viewer)
+                </a>
             </div>
             <div class="card-body">
                 <p class="text-muted small mb-3">Semua mutasi finansial, pergantian state kontrak, dan persetujuan listing dicatat secara permanen.</p>
@@ -204,26 +247,44 @@
                     <div class="time-label">
                         <span class="bg-teal"><?= date('d M Y') ?></span>
                     </div>
-                    <div>
-                        <i class="fas fa-database bg-primary"></i>
-                        <div class="timeline-item shadow-none border">
-                            <span class="time"><i class="fas fa-clock"></i> Baru saja</span>
-                            <h3 class="timeline-header"><span class="font-weight-bold text-primary">System</span> berhasil menjalankan migration skema database Phase 0.</h3>
-                            <div class="timeline-body text-muted small">
-                                15 tabel domain dan relasi foreign key berhasil dibuat di MySQL.
+
+                    <?php if (!empty($recentAuditLogs)): ?>
+                        <?php foreach ($recentAuditLogs as $log): ?>
+                            <div>
+                                <?php 
+                                $iconClass = match($log['action']) {
+                                    'PAYMENT_SUCCESS', 'INVOICE_PAYMENT_SUCCESS', 'CREATE_CONTRACT' => 'fa-credit-card bg-success',
+                                    'INVOICE_OVERDUE', 'PAYMENT_FAILED', 'REFUND_PROCESSED'          => 'fa-triangle-exclamation bg-danger',
+                                    'DISPUTE_OPENED', 'DISPUTE_INVESTIGATING'                        => 'fa-scale-balanced bg-warning',
+                                    'DISPUTE_DECIDED'                                               => 'fa-stamp bg-teal',
+                                    default                                                         => 'fa-circle-check bg-primary',
+                                };
+                                ?>
+                                <i class="fas <?= $iconClass ?>"></i>
+                                <div class="timeline-item shadow-none border">
+                                    <span class="time"><i class="fas fa-clock"></i> <?= date('H:i', strtotime($log['created_at'])) ?></span>
+                                    <h3 class="timeline-header">
+                                        <span class="font-weight-bold text-dark"><?= esc($log['actor_name'] ?? 'System') ?></span>: 
+                                        <span class="badge badge-light border"><?= esc($log['action']) ?></span> pada <code><?= esc($log['object_type']) ?> #<?= $log['object_id'] ?></code>
+                                    </h3>
+                                    <?php if (!empty($log['reason'])): ?>
+                                        <div class="timeline-body text-muted small py-1">
+                                            <?= esc($log['reason']) ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div>
+                            <i class="fas fa-database bg-primary"></i>
+                            <div class="timeline-item shadow-none border">
+                                <span class="time"><i class="fas fa-clock"></i> Baru saja</span>
+                                <h3 class="timeline-header"><span class="font-weight-bold text-primary">System</span> inisialisasi skema database KosAja.</h3>
                             </div>
                         </div>
-                    </div>
-                    <div>
-                        <i class="fas fa-user-plus bg-success"></i>
-                        <div class="timeline-item shadow-none border">
-                            <span class="time"><i class="fas fa-clock"></i> Baru saja</span>
-                            <h3 class="timeline-header"><span class="font-weight-bold text-success">UserSeeder</span> inisialisasi akun Super Admin & Mitra Contoh.</h3>
-                            <div class="timeline-body text-muted small">
-                                Role: <code>super_admin</code>, <code>admin_daerah</code>, <code>provider</code>, <code>tenant</code>.
-                            </div>
-                        </div>
-                    </div>
+                    <?php endif; ?>
+
                     <div>
                         <i class="fas fa-check bg-gray"></i>
                     </div>

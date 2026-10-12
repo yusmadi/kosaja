@@ -4,16 +4,19 @@ namespace App\Controllers;
 
 use App\Models\UserModel;
 use App\Models\ProviderProfileModel;
+use App\Models\AuditLogModel;
 
 class Profile extends BaseController
 {
     protected $userModel;
     protected $providerProfileModel;
+    protected $auditModel;
 
     public function __construct()
     {
-        $this->userModel = new UserModel();
+        $this->userModel            = new UserModel();
         $this->providerProfileModel = new ProviderProfileModel();
+        $this->auditModel           = new AuditLogModel();
     }
 
     /**
@@ -96,6 +99,17 @@ class Profile extends BaseController
             }
         }
 
+        // Record Audit Trail
+        $this->auditModel->record(
+            (int) $userId,
+            'UPDATE_PROFILE',
+            'users',
+            (int) $userId,
+            null,
+            $userData,
+            "Pengguna {$userData['name']} memperbarui informasi profil akun."
+        );
+
         return redirect()->to('/profile')->with('success', 'Profil Anda berhasil diperbarui.');
     }
 
@@ -126,6 +140,17 @@ class Profile extends BaseController
         $this->userModel->update($userId, [
             'password' => password_hash($newPassword, PASSWORD_BCRYPT),
         ]);
+
+        // Record Audit Trail
+        $this->auditModel->record(
+            (int) $userId,
+            'UPDATE_PASSWORD',
+            'users',
+            (int) $userId,
+            null,
+            null,
+            "Pengguna {$user['name']} berhasil memperbarui kata sandi (password) akun."
+        );
 
         return redirect()->to('/profile')->with('success', 'Password Anda berhasil diperbarui!');
     }

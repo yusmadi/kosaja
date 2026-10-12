@@ -107,7 +107,7 @@
                         <!-- Provider-specific fields -->
                         <div id="providerFields" style="display: none;">
                             <div class="p-3 bg-teal bg-opacity-10 rounded-3 border border-teal mb-3">
-                                <div class="fw-bold small text-teal mb-1"><i class="bi bi-gift-fill me-1"></i> Promo 6 Bulan Bebas Listing Fee!</div>
+                                <div class="fw-bold small text-teal mb-1"><i class="bi bi-gift-fill me-1"></i> Promo Bebas Listing Fee (30 Hari / Transaksi Sewa Pertama)!</div>
                                 <div class="small text-muted" style="font-size: 0.8rem;">Rekening ini digunakan untuk penyaluran *settlement* sewa langsung dari penyewa.</div>
                                 <div class="row g-2 mt-2">
                                     <div class="col-md-6">

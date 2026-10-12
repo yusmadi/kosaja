@@ -35,28 +35,40 @@ class Providers extends BaseController
             ->join('provider_profiles', 'provider_profiles.user_id = users.id', 'left')
             ->where('users.role', 'provider');
 
+        $scopeService = new \App\Libraries\AdminScopeService();
+        $isSuperAdmin = $scopeService->isSuperAdmin();
+        $scopedRegionIds = $scopeService->getScopedRegionIds();
+
         if ($statusFilter !== 'all') {
             $builder->where('provider_profiles.verification_status', $statusFilter);
+        }
+
+        if (! $isSuperAdmin) {
+            $builder->join('properties', 'properties.provider_id = users.id')
+                    ->whereIn('properties.region_id', ! empty($scopedRegionIds) ? $scopedRegionIds : [0])
+                    ->groupBy('users.id');
         }
 
         $providers = $builder->orderBy('users.id', 'DESC')->get()->getResultArray();
 
         // Counts
         $counts = [
-            'all'       => $db->table('users')->where('role', 'provider')->countAllResults(),
-            'pending'   => $db->table('provider_profiles')->where('verification_status', 'pending')->countAllResults(),
-            'verified'  => $db->table('provider_profiles')->where('verification_status', 'verified')->countAllResults(),
-            'rejected'  => $db->table('provider_profiles')->where('verification_status', 'rejected')->countAllResults(),
-            'suspended' => $db->table('provider_profiles')->where('verification_status', 'suspended')->countAllResults(),
+            'all'       => count($providers),
+            'pending'   => count(array_filter($providers, fn($p) => ($p['verification_status'] ?? '') === 'pending')),
+            'verified'  => count(array_filter($providers, fn($p) => ($p['verification_status'] ?? '') === 'verified')),
+            'rejected'  => count(array_filter($providers, fn($p) => ($p['verification_status'] ?? '') === 'rejected')),
+            'suspended' => count(array_filter($providers, fn($p) => ($p['verification_status'] ?? '') === 'suspended')),
         ];
 
         return view('admin/providers/index', [
-            'title'        => 'Verifikasi Mitra Provider (KYC) — Admin',
-            'role'         => 'admin',
+            'title'        => $isSuperAdmin ? 'Mitra Penyedia Global (SA-03) — Super Admin' : 'Verifikasi Mitra Provider (ADM-02) — Admin Daerah',
+            'role'         => session()->get('role') ?? ($isSuperAdmin ? 'super_admin' : 'admin_daerah'),
             'activeMenu'   => 'providers',
             'providers'    => $providers,
             'counts'       => $counts,
             'statusFilter' => $statusFilter,
+            'isSuperAdmin' => $isSuperAdmin,
+            'scopedLabel'  => $scopeService->getScopedRegionLabel(),
         ]);
     }
 

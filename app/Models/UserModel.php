@@ -19,6 +19,7 @@ class UserModel extends Model
         'whatsapp',
         'gender',
         'role',
+        'region_id',
         'status',
     ];
 

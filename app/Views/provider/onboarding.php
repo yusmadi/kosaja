@@ -224,11 +224,11 @@
                 <div class="border-top border-white-50 pt-3">
                     <div class="d-flex justify-content-between text-sm">
                         <span>Bebas Biaya Listing:</span>
-                        <strong>6 Bulan Pertama</strong>
+                        <strong>30 Hari (s.d Sewa Pertama)</strong>
                     </div>
                     <div class="d-flex justify-content-between text-sm mt-1">
                         <span>Berlaku Hingga:</span>
-                        <strong><?= date('d M Y', strtotime($profile['free_period_end'] ?? '+6 months')) ?></strong>
+                        <strong><?= date('d M Y', strtotime($profile['free_period_end'] ?? '+30 days')) ?></strong>
                     </div>
                 </div>
             </div>

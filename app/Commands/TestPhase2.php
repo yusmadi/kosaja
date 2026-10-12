@@ -52,7 +52,7 @@ class TestPhase2 extends BaseCommand
                 'verification_status' => 'pending',
                 'bank_name'           => 'BSI',
                 'bank_account_number' => '7123456789',
-                'free_period_end'     => date('Y-m-d', strtotime('+6 months')),
+                'free_period_end'     => $profileModel->calculateDefaultFreePeriodEnd(),
             ]);
             $profile = $profileModel->getByUserId($provider['id']);
         }

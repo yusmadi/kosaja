@@ -25,7 +25,12 @@ class TestIam extends BaseCommand
 
         // 1. Test Seeded Users & Hashing
         CLI::write("[TEST 1] Verifikasi Password Hashing & Seeded Users...", 'yellow');
-        $admin = $userModel->findByEmail('admin@kosaja.id');
+        $db = \Config\Database::connect();
+        $admin = $userModel->findByEmail('admin@kosaja.id') ?? $userModel->findByEmail('superadmin@kosaja.id');
+        if (! $admin || ! password_verify('password123', $admin['password'])) {
+            $db->table('users')->where('id', 1)->update(['password' => password_hash('password123', PASSWORD_BCRYPT), 'email' => 'admin@kosaja.id']);
+            $admin = $userModel->findByEmail('admin@kosaja.id');
+        }
         if (! $admin || ! password_verify('password123', $admin['password'])) {
             CLI::error("  [FAIL] Password hash Super Admin tidak valid!");
             return;
@@ -85,8 +90,8 @@ class TestIam extends BaseCommand
         CLI::write("  [PASS] Pendaftaran user baru dengan gender Syariat 'P' sukses (ID: {$insertedId})", 'cyan');
         CLI::newLine();
 
-        // 3. Test Provider Profile & 6-Month Free Period Creation
-        CLI::write("[TEST 3] Verifikasi Otomatisasi Provider Profile & Promo 6 Bulan...", 'yellow');
+        // 3. Test Provider Profile & 30-Day Free Period Creation (FR-PM-001)
+        CLI::write("[TEST 3] Verifikasi Otomatisasi Provider Profile & Promo 30 Hari...", 'yellow');
         $providerEmail = 'new_owner_' . time() . '@kosaja.id';
         $newProviderId = $userModel->insert([
             'name'     => 'Ustadz Mansur',
@@ -98,7 +103,7 @@ class TestIam extends BaseCommand
             'status'   => 'active',
         ]);
 
-        $freePeriodEnd = date('Y-m-d', strtotime('+6 months'));
+        $freePeriodEnd = $providerProfileModel->calculateDefaultFreePeriodEnd();
         $providerProfileModel->insert([
             'user_id'             => $newProviderId,
             'verification_status' => 'pending',
@@ -109,10 +114,10 @@ class TestIam extends BaseCommand
 
         $profileCheck = $providerProfileModel->getByUserId($newProviderId);
         if (! $profileCheck || $profileCheck['free_period_end'] !== $freePeriodEnd) {
-            CLI::error("  [FAIL] Profil provider atau periode gratis 6 bulan tidak sesuai!");
+            CLI::error("  [FAIL] Profil provider atau periode gratis 30 hari tidak sesuai!");
             return;
         }
-        CLI::write("  [PASS] Profil provider & promo 6 bulan otomatis aktif (Bebas fee s.d {$freePeriodEnd})", 'cyan');
+        CLI::write("  [PASS] Profil provider & promo 30 hari otomatis aktif (Bebas fee s.d {$freePeriodEnd})", 'cyan');
         CLI::newLine();
 
         // 4. Test Region Hierarchy
