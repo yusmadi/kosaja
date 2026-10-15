@@ -55,11 +55,16 @@
             <i class="fas fa-clock mr-1"></i> Menunggu Verifikasi <span class="badge badge-danger ml-1"><?= $counts['pending'] ?></span>
         </a>
         <a href="<?= base_url('/admin/providers?status=verified') ?>" class="btn btn-sm <?= ($statusFilter === 'verified') ? 'btn-success' : 'btn-light border' ?>">
-            <i class="fas fa-check mr-1"></i> Terverifikasi <span class="badge badge-secondary ml-1"><?= $counts['verified'] ?></span>
+            <i class="fas fa-check mr-1"></i> Terverifikasi <span class="badge <?= ($statusFilter === 'verified') ? 'badge-light text-success' : 'badge-secondary' ?> ml-1"><?= $counts['verified'] ?></span>
         </a>
         <a href="<?= base_url('/admin/providers?status=rejected') ?>" class="btn btn-sm <?= ($statusFilter === 'rejected') ? 'btn-danger' : 'btn-light border' ?>">
-            <i class="fas fa-times mr-1"></i> Ditolak <span class="badge badge-secondary ml-1"><?= $counts['rejected'] ?></span>
+            <i class="fas fa-times mr-1"></i> Ditolak <span class="badge <?= ($statusFilter === 'rejected') ? 'badge-light text-danger' : 'badge-secondary' ?> ml-1"><?= $counts['rejected'] ?></span>
         </a>
+        <?php if (!empty($counts['suspended'])): ?>
+        <a href="<?= base_url('/admin/providers?status=suspended') ?>" class="btn btn-sm <?= ($statusFilter === 'suspended') ? 'btn-dark text-white' : 'btn-light border' ?>">
+            <i class="fas fa-ban mr-1"></i> Ditangguhkan <span class="badge <?= ($statusFilter === 'suspended') ? 'badge-light text-dark' : 'badge-secondary' ?> ml-1"><?= $counts['suspended'] ?></span>
+        </a>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -126,7 +131,7 @@
                                 <td class="text-center">
                                     <?php if (!empty($p['profile_id'])): ?>
                                         <?php if ($p['verification_status'] !== 'verified'): ?>
-                                            <form action="<?= base_url('/admin/providers/verify/' . $p['profile_id']) ?>" method="post" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menyetujui verifikasi mitra ini?');">
+                                            <form action="<?= base_url('/admin/providers/verify/' . $p['profile_id']) ?>" method="post" class="d-inline form-verify" data-provider-name="<?= esc($p['name']) ?>">
                                                 <?= csrf_field() ?>
                                                 <button type="submit" class="btn btn-xs btn-success font-weight-bold" title="Setujui Verifikasi">
                                                     <i class="fas fa-check mr-1"></i> Setujui
@@ -171,7 +176,7 @@
                                         <?php endif; ?>
 
                                         <?php if ($p['verification_status'] === 'verified'): ?>
-                                            <form action="<?= base_url('/admin/providers/suspend/' . $p['profile_id']) ?>" method="post" class="d-inline" onsubmit="return confirm('Tangguhkan status mitra ini?');">
+                                            <form action="<?= base_url('/admin/providers/suspend/' . $p['profile_id']) ?>" method="post" class="d-inline form-suspend" data-provider-name="<?= esc($p['name']) ?>">
                                                 <?= csrf_field() ?>
                                                 <button type="submit" class="btn btn-xs btn-outline-dark" title="Suspend Mitra">
                                                     <i class="fas fa-ban"></i>
@@ -197,4 +202,78 @@
         </div>
     </div>
 </div>
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // SweetAlert2 Confirmation for "Setujui"
+    document.querySelectorAll('.form-verify').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            if (form.dataset.confirmed === 'true') {
+                return;
+            }
+            e.preventDefault();
+            var providerName = form.getAttribute('data-provider-name') || 'mitra ini';
+
+            Swal.fire({
+                title: 'Setujui Verifikasi Mitra?',
+                html: 'Apakah Anda yakin ingin menyetujui verifikasi identitas KYC untuk <strong>' + providerName + '</strong>?<br><small class="text-muted d-block mt-2">Setelah disetujui, mitra dapat mengaktifkan listing properti dan menerima reservasi.</small>',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#0d9488',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-check mr-1"></i> Ya, Setujui',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                focusCancel: false,
+                customClass: {
+                    confirmButton: 'btn btn-teal px-3 py-2 mx-1',
+                    cancelButton: 'btn btn-secondary px-3 py-2 mx-1'
+                },
+                buttonsStyling: false
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    form.dataset.confirmed = 'true';
+                    form.submit();
+                }
+            });
+        });
+    });
+
+    // SweetAlert2 Confirmation for "Suspend Mitra"
+    document.querySelectorAll('.form-suspend').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            if (form.dataset.confirmed === 'true') {
+                return;
+            }
+            e.preventDefault();
+            var providerName = form.getAttribute('data-provider-name') || 'mitra ini';
+
+            Swal.fire({
+                title: 'Tangguhkan Status Mitra?',
+                html: 'Apakah Anda yakin ingin menangguhkan akun mitra <strong>' + providerName + '</strong>?<br><small class="text-muted d-block mt-2">Akses operasional dan listing properti milik mitra akan dinonaktifkan sementara.</small>',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-ban mr-1"></i> Ya, Tangguhkan',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                focusCancel: true,
+                customClass: {
+                    confirmButton: 'btn btn-danger px-3 py-2 mx-1',
+                    cancelButton: 'btn btn-secondary px-3 py-2 mx-1'
+                },
+                buttonsStyling: false
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    form.dataset.confirmed = 'true';
+                    form.submit();
+                }
+            });
+        });
+    });
+});
+</script>
 <?= $this->endSection() ?>

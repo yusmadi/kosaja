@@ -87,7 +87,7 @@
                     </h5>
 
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="price_monthly" class="form-label font-weight-bold">Harga Sewa Bulanan (Rp)</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -95,10 +95,21 @@
                                 </div>
                                 <input type="number" name="price_monthly" id="price_monthly" class="form-control font-weight-bold" placeholder="Contoh: 1250000" value="<?= old('price_monthly') ?>" step="50000">
                             </div>
-                            <small class="text-muted">Kosongkan jika hanya menerima sewa tahunan.</small>
+                            <small class="text-muted">Kosongkan jika hanya menerima sewa jangka panjang.</small>
                         </div>
 
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
+                            <label for="price_six_monthly" class="form-label font-weight-bold">Harga Sewa Enam Bulan (Rp)</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text font-weight-bold">Rp</span>
+                                </div>
+                                <input type="number" name="price_six_monthly" id="price_six_monthly" class="form-control font-weight-bold" placeholder="Contoh: 7200000" value="<?= old('price_six_monthly') ?>" step="50000">
+                            </div>
+                            <small class="text-muted">Opsional, paket sewa per 6 bulan (semester).</small>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
                             <label for="price_yearly" class="form-label font-weight-bold">Harga Sewa Tahunan (Rp)</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">

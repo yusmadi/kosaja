@@ -39,26 +39,31 @@ class Providers extends BaseController
         $isSuperAdmin = $scopeService->isSuperAdmin();
         $scopedRegionIds = $scopeService->getScopedRegionIds();
 
-        if ($statusFilter !== 'all') {
-            $builder->where('provider_profiles.verification_status', $statusFilter);
-        }
-
         if (! $isSuperAdmin) {
             $builder->join('properties', 'properties.provider_id = users.id')
                     ->whereIn('properties.region_id', ! empty($scopedRegionIds) ? $scopedRegionIds : [0])
                     ->groupBy('users.id');
         }
 
-        $providers = $builder->orderBy('users.id', 'DESC')->get()->getResultArray();
+        $allProviders = $builder->orderBy('users.id', 'DESC')->get()->getResultArray();
 
-        // Counts
+        // Counts across all providers in current admin scope (independent of active filter tab)
         $counts = [
-            'all'       => count($providers),
-            'pending'   => count(array_filter($providers, fn($p) => ($p['verification_status'] ?? '') === 'pending')),
-            'verified'  => count(array_filter($providers, fn($p) => ($p['verification_status'] ?? '') === 'verified')),
-            'rejected'  => count(array_filter($providers, fn($p) => ($p['verification_status'] ?? '') === 'rejected')),
-            'suspended' => count(array_filter($providers, fn($p) => ($p['verification_status'] ?? '') === 'suspended')),
+            'all'       => count($allProviders),
+            'pending'   => count(array_filter($allProviders, fn($p) => ($p['verification_status'] ?? 'pending') === 'pending')),
+            'verified'  => count(array_filter($allProviders, fn($p) => ($p['verification_status'] ?? '') === 'verified')),
+            'rejected'  => count(array_filter($allProviders, fn($p) => ($p['verification_status'] ?? '') === 'rejected')),
+            'suspended' => count(array_filter($allProviders, fn($p) => ($p['verification_status'] ?? '') === 'suspended')),
         ];
+
+        // Filter providers based on active tab
+        if ($statusFilter === 'all') {
+            $providers = $allProviders;
+        } elseif ($statusFilter === 'pending') {
+            $providers = array_values(array_filter($allProviders, fn($p) => ($p['verification_status'] ?? 'pending') === 'pending'));
+        } else {
+            $providers = array_values(array_filter($allProviders, fn($p) => ($p['verification_status'] ?? '') === $statusFilter));
+        }
 
         return view('admin/providers/index', [
             'title'        => $isSuperAdmin ? 'Mitra Penyedia Global (SA-03) — Super Admin' : 'Verifikasi Mitra Provider (ADM-02) — Admin Daerah',

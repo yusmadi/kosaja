@@ -56,7 +56,7 @@ class UnitModel extends Model
     {
         $db = \Config\Database::connect();
 
-        $unit = $this->select('units.*, properties.name as property_name, properties.provider_id, properties.target_gender, properties.address, properties.type as property_type, listings.id as listing_id, listings.title as listing_title, listings.description as listing_description, listings.price_monthly, listings.price_yearly, listings.publication_status, listings.rejection_reason')
+        $unit = $this->select('units.*, properties.name as property_name, properties.provider_id, properties.target_gender, properties.address, properties.type as property_type, listings.id as listing_id, listings.title as listing_title, listings.description as listing_description, listings.price_monthly, listings.price_six_monthly, listings.price_yearly, listings.publication_status, listings.rejection_reason')
                      ->join('properties', 'properties.id = units.property_id')
                      ->join('listings', 'listings.unit_id = units.id', 'left')
                      ->where('units.id', $unitId)

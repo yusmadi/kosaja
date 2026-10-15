@@ -75,7 +75,7 @@
                     </h5>
 
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="price_monthly" class="form-label font-weight-bold">Harga Sewa Bulanan (Rp)</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -85,7 +85,17 @@
                             </div>
                         </div>
 
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
+                            <label for="price_six_monthly" class="form-label font-weight-bold">Harga Sewa Enam Bulan (Rp)</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text font-weight-bold">Rp</span>
+                                </div>
+                                <input type="number" name="price_six_monthly" id="price_six_monthly" class="form-control font-weight-bold" value="<?= esc(old('price_six_monthly', $listing['price_six_monthly'] ?? '')) ?>" step="50000">
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
                             <label for="price_yearly" class="form-label font-weight-bold">Harga Sewa Tahunan (Rp)</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">

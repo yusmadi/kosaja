@@ -61,6 +61,7 @@ class ReservationModel extends Model
                 tenants.gender as tenant_gender,
                 listings.title as listing_title,
                 listings.price_monthly,
+                listings.price_six_monthly,
                 listings.price_yearly,
                 units.name as unit_name,
                 units.size as unit_size,

@@ -72,7 +72,7 @@ class FavoriteModel extends Model
     public function getUserFavorites(int $userId): array
     {
         return $this->select('favorites.id as favorite_id, favorites.created_at as favorited_at,
-            listings.id as id, listings.title, listings.description, listings.price_monthly, listings.price_yearly, listings.publication_status,
+            listings.id as id, listings.title, listings.description, listings.price_monthly, listings.price_six_monthly, listings.price_yearly, listings.publication_status,
             units.name as unit_name, units.size as unit_size, units.status as unit_status,
             properties.name as property_name, properties.type, properties.target_gender, properties.address,
             regions.name as region_name,

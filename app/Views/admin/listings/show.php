@@ -148,13 +148,19 @@
                 </div>
 
                 <div class="row g-3 p-3 bg-light rounded-3 mb-4">
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                         <div class="text-muted small">Harga Sewa Bulanan</div>
                         <div class="h5 font-weight-bold text-teal mb-0">
                             Rp <?= number_format($listing['price_monthly'], 0, ',', '.') ?> <span class="small text-muted font-weight-normal">/ bulan</span>
                         </div>
                     </div>
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
+                        <div class="text-muted small">Harga Sewa Enam Bulan</div>
+                        <div class="h5 font-weight-bold text-dark mb-0">
+                            <?= !empty($listing['price_six_monthly']) ? 'Rp ' . number_format($listing['price_six_monthly'], 0, ',', '.') . ' <span class="small text-muted font-weight-normal">/ 6 bulan</span>' : '<span class="text-muted font-weight-normal">Tidak ditawarkan</span>' ?>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
                         <div class="text-muted small">Harga Sewa Tahunan</div>
                         <div class="h5 font-weight-bold text-dark mb-0">
                             <?= !empty($listing['price_yearly']) ? 'Rp ' . number_format($listing['price_yearly'], 0, ',', '.') . ' <span class="small text-muted font-weight-normal">/ tahun</span>' : '<span class="text-muted font-weight-normal">Tidak ditawarkan</span>' ?>

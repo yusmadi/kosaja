@@ -253,6 +253,12 @@
                             <span class="text-muted">Tarif Sewa Kamar:</span>
                             <span class="fw-semibold">Rp <?= number_format($listing['price_monthly'], 0, ',', '.') ?> / bln</span>
                         </div>
+                        <?php if (!empty($listing['price_six_monthly'])): ?>
+                            <div class="d-flex justify-content-between mb-2 small">
+                                <span class="text-muted">Tarif 6 Bulan:</span>
+                                <span class="fw-semibold">Rp <?= number_format($listing['price_six_monthly'], 0, ',', '.') ?> / 6 bln</span>
+                            </div>
+                        <?php endif; ?>
                         <?php if (!empty($listing['price_yearly'])): ?>
                             <div class="d-flex justify-content-between mb-2 small">
                                 <span class="text-muted">Tarif Tahunan:</span>
@@ -313,9 +319,10 @@
 </div>
 
 <script>
-    const priceMonthly = <?= (float) $listing['price_monthly'] ?>;
-    const priceYearly  = <?= !empty($listing['price_yearly']) ? (float) $listing['price_yearly'] : ((float) $listing['price_monthly'] * 12) ?>;
-    const gatewayFee   = <?= (float) $reservationConfig->gatewayFee ?>;
+    const priceMonthly     = <?= (float) $listing['price_monthly'] ?>;
+    const priceSixMonthly  = <?= !empty($listing['price_six_monthly']) ? (float) $listing['price_six_monthly'] : 'null' ?>;
+    const priceYearly      = <?= !empty($listing['price_yearly']) ? (float) $listing['price_yearly'] : ((float) $listing['price_monthly'] * 12) ?>;
+    const gatewayFee       = <?= (float) $reservationConfig->gatewayFee ?>;
 
     function formatRupiah(number) {
         return 'Rp ' + Math.round(number).toLocaleString('id-ID');
@@ -338,7 +345,7 @@
             rentalAmount = priceMonthly * Math.min(3, duration);
             scheduleLabel = 'Per 3 Bulan';
         } else if (schedule === '6_monthly') {
-            rentalAmount = priceMonthly * Math.min(6, duration);
+            rentalAmount = priceSixMonthly ? priceSixMonthly : (priceMonthly * Math.min(6, duration));
             scheduleLabel = 'Per 6 Bulan';
         } else if (schedule === 'yearly') {
             rentalAmount = (duration >= 12) ? priceYearly : (priceMonthly * 12);

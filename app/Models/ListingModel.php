@@ -16,6 +16,7 @@ class ListingModel extends Model
         'title',
         'description',
         'price_monthly',
+        'price_six_monthly',
         'price_yearly',
         'publication_status',
         'rejection_reason',
@@ -34,6 +35,7 @@ class ListingModel extends Model
         'description'        => 'required|min_length[10]',
         'publication_status' => 'required|in_list[draft,pending_review,published,inactive]',
         'price_monthly'      => 'permit_empty|numeric',
+        'price_six_monthly'  => 'permit_empty|numeric',
         'price_yearly'       => 'permit_empty|numeric',
     ];
 

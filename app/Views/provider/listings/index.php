@@ -137,6 +137,11 @@
                                             Rp <?= number_format($l['price_monthly'], 0, ',', '.') ?> <small class="text-muted">/ bln</small>
                                         </div>
                                     <?php endif; ?>
+                                    <?php if (!empty($l['price_six_monthly'])): ?>
+                                        <small class="text-muted d-block">
+                                            Rp <?= number_format($l['price_six_monthly'], 0, ',', '.') ?> / 6 bln
+                                        </small>
+                                    <?php endif; ?>
                                     <?php if (!empty($l['price_yearly'])): ?>
                                         <small class="text-muted d-block">
                                             Rp <?= number_format($l['price_yearly'], 0, ',', '.') ?> / thn

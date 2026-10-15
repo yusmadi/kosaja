@@ -118,8 +118,9 @@ class Listings extends BaseController
             'unit_id'       => 'required|numeric',
             'title'         => 'required|min_length[5]|max_length[255]',
             'description'   => 'required|min_length[10]',
-            'price_monthly' => 'permit_empty|numeric',
-            'price_yearly'  => 'permit_empty|numeric',
+            'price_monthly'     => 'permit_empty|numeric',
+            'price_six_monthly' => 'permit_empty|numeric',
+            'price_yearly'      => 'permit_empty|numeric',
         ];
 
         $messages = [
@@ -141,14 +142,16 @@ class Listings extends BaseController
         $action = $this->request->getPost('action'); // 'draft' or 'submit_review'
         $publicationStatus = ($action === 'submit_review') ? 'pending_review' : 'draft';
 
-        $priceMonthly = $this->request->getPost('price_monthly');
-        $priceYearly  = $this->request->getPost('price_yearly');
+        $priceMonthly    = $this->request->getPost('price_monthly');
+        $priceSixMonthly = $this->request->getPost('price_six_monthly');
+        $priceYearly     = $this->request->getPost('price_yearly');
 
         $newListingId = $this->listingModel->insert([
             'unit_id'            => $unitId,
             'title'              => $this->request->getPost('title'),
             'description'        => $this->request->getPost('description'),
             'price_monthly'      => !empty($priceMonthly) ? (float) $priceMonthly : null,
+            'price_six_monthly'  => !empty($priceSixMonthly) ? (float) $priceSixMonthly : null,
             'price_yearly'       => !empty($priceYearly) ? (float) $priceYearly : null,
             'publication_status' => $publicationStatus,
         ]);
@@ -205,10 +208,11 @@ class Listings extends BaseController
         }
 
         $rules = [
-            'title'         => 'required|min_length[5]|max_length[255]',
-            'description'   => 'required|min_length[10]',
-            'price_monthly' => 'permit_empty|numeric',
-            'price_yearly'  => 'permit_empty|numeric',
+            'title'             => 'required|min_length[5]|max_length[255]',
+            'description'       => 'required|min_length[10]',
+            'price_monthly'     => 'permit_empty|numeric',
+            'price_six_monthly' => 'permit_empty|numeric',
+            'price_yearly'      => 'permit_empty|numeric',
         ];
 
         if (! $this->validate($rules)) {
@@ -222,13 +226,15 @@ class Listings extends BaseController
             $publicationStatus = 'pending_review';
         }
 
-        $priceMonthly = $this->request->getPost('price_monthly');
-        $priceYearly  = $this->request->getPost('price_yearly');
+        $priceMonthly    = $this->request->getPost('price_monthly');
+        $priceSixMonthly = $this->request->getPost('price_six_monthly');
+        $priceYearly     = $this->request->getPost('price_yearly');
 
         $updateData = [
             'title'              => $this->request->getPost('title'),
             'description'        => $this->request->getPost('description'),
             'price_monthly'      => !empty($priceMonthly) ? (float) $priceMonthly : null,
+            'price_six_monthly'  => !empty($priceSixMonthly) ? (float) $priceSixMonthly : null,
             'price_yearly'       => !empty($priceYearly) ? (float) $priceYearly : null,
             'publication_status' => $publicationStatus,
         ];

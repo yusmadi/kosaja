@@ -181,13 +181,14 @@ class Application extends BaseController
         }
 
         // Calculate rental amount for the first payment schedule
-        $monthlyPrice = (float) $listing['price_monthly'];
-        $yearlyPrice  = !empty($listing['price_yearly']) ? (float) $listing['price_yearly'] : ($monthlyPrice * 12);
+        $monthlyPrice    = (float) $listing['price_monthly'];
+        $sixMonthlyPrice = !empty($listing['price_six_monthly']) ? (float) $listing['price_six_monthly'] : ($monthlyPrice * min(6, $durationMonths));
+        $yearlyPrice     = !empty($listing['price_yearly']) ? (float) $listing['price_yearly'] : ($monthlyPrice * 12);
 
         $rentalAmount = match ($paymentSchedule) {
             'monthly'      => $monthlyPrice,
             '3_monthly'    => $monthlyPrice * min(3, $durationMonths),
-            '6_monthly'    => $monthlyPrice * min(6, $durationMonths),
+            '6_monthly'    => $sixMonthlyPrice,
             'yearly'       => ($durationMonths >= 12 && !empty($listing['price_yearly'])) ? $yearlyPrice : ($monthlyPrice * 12),
             'full_upfront' => ($durationMonths >= 12 && !empty($listing['price_yearly'])) ? ($yearlyPrice * floor($durationMonths / 12) + ($monthlyPrice * ($durationMonths % 12))) : ($monthlyPrice * $durationMonths),
             default        => $monthlyPrice,

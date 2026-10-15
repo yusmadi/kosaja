@@ -220,6 +220,11 @@
                         <span class="text-muted">/ bulan</span>
                     </div>
 
+                    <?php if (!empty($listing['price_six_monthly'])): ?>
+                        <div class="small text-muted mb-1">
+                            Atau <strong>Rp <?= number_format($listing['price_six_monthly'], 0, ',', '.') ?></strong> / 6 bulan
+                        </div>
+                    <?php endif; ?>
                     <?php if (!empty($listing['price_yearly'])): ?>
                         <div class="small text-muted mb-3">
                             Atau <strong>Rp <?= number_format($listing['price_yearly'], 0, ',', '.') ?></strong> / tahun (hemat lebih banyak)
