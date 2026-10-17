@@ -124,12 +124,50 @@
                                 <p class="text-muted small mb-3 flex-grow-1" style="font-size: 0.85rem; line-height: 1.4;">
                                     <?= character_limiter(esc($item['description']), 85) ?>
                                 </p>
-                                <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                                <div class="d-flex align-items-center justify-content-between pt-3 border-top mt-auto">
                                     <div>
-                                        <div class="property-price">
-                                            Rp <?= number_format($item['price_monthly'], 0, ',', '.') ?>
-                                            <span>/ bln</span>
-                                        </div>
+                                        <?php
+                                            $activePrices = [];
+                                            if (!empty($item['price_monthly']) && (float)$item['price_monthly'] > 0) {
+                                                $activePrices[] = [
+                                                    'amount' => (float)$item['price_monthly'],
+                                                    'label'  => '/ bln',
+                                                ];
+                                            }
+                                            if (!empty($item['price_six_monthly']) && (float)$item['price_six_monthly'] > 0) {
+                                                $activePrices[] = [
+                                                    'amount' => (float)$item['price_six_monthly'],
+                                                    'label'  => '/ enam bulan',
+                                                ];
+                                            }
+                                            if (!empty($item['price_yearly']) && (float)$item['price_yearly'] > 0) {
+                                                $activePrices[] = [
+                                                    'amount' => (float)$item['price_yearly'],
+                                                    'label'  => '/ thn',
+                                                ];
+                                            }
+                                        ?>
+                                        <?php if (!empty($activePrices)): ?>
+                                            <div class="property-price">
+                                                Rp <?= number_format($activePrices[0]['amount'], 0, ',', '.') ?>
+                                                <span><?= $activePrices[0]['label'] ?></span>
+                                            </div>
+                                            <?php if (count($activePrices) > 1): ?>
+                                                <div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">
+                                                    <?php 
+                                                        $otherLabels = [];
+                                                        for ($i = 1; $i < count($activePrices); $i++) {
+                                                            $otherLabels[] = 'Rp ' . number_format($activePrices[$i]['amount'], 0, ',', '.') . ' ' . $activePrices[$i]['label'];
+                                                        }
+                                                        echo implode(' &bull; ', $otherLabels);
+                                                    ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <div class="property-price text-muted" style="font-size: 0.95rem;">
+                                                Hubungi Pemilik
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                     <a href="<?= base_url('/listing/' . $item['id']) ?>" class="btn btn-sm btn-kosaja-outline">
                                         Detail <i class="bi bi-arrow-right ms-1"></i>

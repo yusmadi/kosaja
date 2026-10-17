@@ -124,7 +124,7 @@
                 </div>
                 <div class="col-lg-3">
                     <h6 class="text-white fw-bold mb-3">Bantuan & Hubungi</h6>
-                    <p class="small text-secondary mb-2"><i class="bi bi-whatsapp me-2 text-success"></i> WhatsApp CS: 0812-3456-7890</p>
+                    <p class="small text-secondary mb-2"><a href="https://wa.me/6289516563349" target="_blank" class="text-secondary text-decoration-none"><i class="bi bi-whatsapp me-2 text-success"></i> WhatsApp CS: 0895-1656-3349</a></p>
                     <p class="small text-secondary mb-2"><i class="bi bi-envelope me-2"></i> info@kosaja.id</p>
                     <div class="mt-3">
                         <span class="badge bg-dark border border-secondary text-light py-2 px-3 small">

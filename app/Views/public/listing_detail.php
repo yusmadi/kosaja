@@ -213,23 +213,58 @@
             <div class="col-lg-4">
                 <div class="sticky-booking-card">
                     <span class="text-muted small text-uppercase fw-semibold">Biaya Sewa Hunian</span>
-                    <div class="d-flex align-items-baseline gap-1 my-2">
-                        <span class="h2 fw-bold text-teal mb-0">
-                            Rp <?= number_format($listing['price_monthly'], 0, ',', '.') ?>
-                        </span>
-                        <span class="text-muted">/ bulan</span>
-                    </div>
 
-                    <?php if (!empty($listing['price_six_monthly'])): ?>
-                        <div class="small text-muted mb-1">
-                            Atau <strong>Rp <?= number_format($listing['price_six_monthly'], 0, ',', '.') ?></strong> / 6 bulan
+                    <?php
+                        $detailPrices = [];
+                        if (!empty($listing['price_monthly']) && (float)$listing['price_monthly'] > 0) {
+                            $detailPrices[] = [
+                                'type'   => 'monthly',
+                                'amount' => (float)$listing['price_monthly'],
+                                'label'  => '/ bulan',
+                                'sub'    => '',
+                            ];
+                        }
+                        if (!empty($listing['price_six_monthly']) && (float)$listing['price_six_monthly'] > 0) {
+                            $detailPrices[] = [
+                                'type'   => 'six_monthly',
+                                'amount' => (float)$listing['price_six_monthly'],
+                                'label'  => '/ enam bulan',
+                                'sub'    => '',
+                            ];
+                        }
+                        if (!empty($listing['price_yearly']) && (float)$listing['price_yearly'] > 0) {
+                            $detailPrices[] = [
+                                'type'   => 'yearly',
+                                'amount' => (float)$listing['price_yearly'],
+                                'label'  => '/ tahun',
+                                'sub'    => ' (hemat lebih banyak)',
+                            ];
+                        }
+                    ?>
+
+                    <?php if (!empty($detailPrices)): ?>
+                        <div class="d-flex align-items-baseline gap-1 my-2">
+                            <span class="h2 fw-bold text-teal mb-0">
+                                Rp <?= number_format($detailPrices[0]['amount'], 0, ',', '.') ?>
+                            </span>
+                            <span class="text-muted"><?= $detailPrices[0]['label'] ?></span>
                         </div>
-                    <?php endif; ?>
-                    <?php if (!empty($listing['price_yearly'])): ?>
-                        <div class="small text-muted mb-3">
-                            Atau <strong>Rp <?= number_format($listing['price_yearly'], 0, ',', '.') ?></strong> / tahun (hemat lebih banyak)
-                        </div>
+
+                        <?php for ($i = 1; $i < count($detailPrices); $i++): ?>
+                            <div class="small text-muted <?= ($i === count($detailPrices) - 1) ? 'mb-3' : 'mb-1' ?>">
+                                Atau <strong>Rp <?= number_format($detailPrices[$i]['amount'], 0, ',', '.') ?></strong> <?= $detailPrices[$i]['label'] ?><?= $detailPrices[$i]['sub'] ?>
+                            </div>
+                        <?php endfor; ?>
+
+                        <?php if (count($detailPrices) === 1): ?>
+                            <div class="mb-3"></div>
+                        <?php endif; ?>
                     <?php else: ?>
+                        <div class="d-flex align-items-baseline gap-1 my-2">
+                            <span class="h4 fw-bold text-muted mb-0">
+                                Hubungi Pemilik
+                            </span>
+                        </div>
                         <div class="mb-3"></div>
                     <?php endif; ?>
 
@@ -314,9 +349,40 @@
                                         </a>
                                     </h4>
                                     <div class="d-flex align-items-center justify-content-between pt-3 border-top mt-auto">
-                                        <div class="property-price">
-                                            Rp <?= number_format($sim['price_monthly'], 0, ',', '.') ?>
-                                            <span>/ bln</span>
+                                        <div>
+                                            <?php
+                                                $simPrices = [];
+                                                if (!empty($sim['price_monthly']) && (float)$sim['price_monthly'] > 0) {
+                                                    $simPrices[] = ['amount' => (float)$sim['price_monthly'], 'label' => '/ bln'];
+                                                }
+                                                if (!empty($sim['price_six_monthly']) && (float)$sim['price_six_monthly'] > 0) {
+                                                    $simPrices[] = ['amount' => (float)$sim['price_six_monthly'], 'label' => '/ enam bulan'];
+                                                }
+                                                if (!empty($sim['price_yearly']) && (float)$sim['price_yearly'] > 0) {
+                                                    $simPrices[] = ['amount' => (float)$sim['price_yearly'], 'label' => '/ thn'];
+                                                }
+                                            ?>
+                                            <?php if (!empty($simPrices)): ?>
+                                                <div class="property-price">
+                                                    Rp <?= number_format($simPrices[0]['amount'], 0, ',', '.') ?>
+                                                    <span><?= $simPrices[0]['label'] ?></span>
+                                                </div>
+                                                <?php if (count($simPrices) > 1): ?>
+                                                    <div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">
+                                                        <?php 
+                                                            $otherLabels = [];
+                                                            for ($i = 1; $i < count($simPrices); $i++) {
+                                                                $otherLabels[] = 'Rp ' . number_format($simPrices[$i]['amount'], 0, ',', '.') . ' ' . $simPrices[$i]['label'];
+                                                            }
+                                                            echo implode(' &bull; ', $otherLabels);
+                                                        ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                <div class="property-price text-muted" style="font-size: 0.95rem;">
+                                                    Hubungi Pemilik
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
                                         <a href="<?= base_url('/listing/' . $sim['id']) ?>" class="btn btn-sm btn-kosaja-outline">
                                             Detail

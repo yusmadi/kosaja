@@ -114,6 +114,17 @@ class Listings extends BaseController
             return redirect()->to('/provider/listings')->with('error', 'Unit ini sudah memiliki listing iklan.');
         }
 
+        // Bersihkan separator angka jika dikirim terformat dari inputmask
+        $postData = $this->request->getPost();
+        foreach (['price_monthly', 'price_six_monthly', 'price_yearly'] as $field) {
+            if (isset($postData[$field]) && $postData[$field] !== '') {
+                $cleaned = preg_replace('/[^\d]/', '', (string)$postData[$field]);
+                $postData[$field] = $cleaned !== '' ? $cleaned : null;
+            } else {
+                $postData[$field] = null;
+            }
+        }
+
         $rules = [
             'unit_id'       => 'required|numeric',
             'title'         => 'required|min_length[5]|max_length[255]',
@@ -134,7 +145,7 @@ class Listings extends BaseController
             ],
         ];
 
-        if (! $this->validate($rules, $messages)) {
+        if (! $this->validateData($postData, $rules, $messages)) {
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
@@ -142,9 +153,9 @@ class Listings extends BaseController
         $action = $this->request->getPost('action'); // 'draft' or 'submit_review'
         $publicationStatus = ($action === 'submit_review') ? 'pending_review' : 'draft';
 
-        $priceMonthly    = $this->request->getPost('price_monthly');
-        $priceSixMonthly = $this->request->getPost('price_six_monthly');
-        $priceYearly     = $this->request->getPost('price_yearly');
+        $priceMonthly    = $postData['price_monthly'];
+        $priceSixMonthly = $postData['price_six_monthly'];
+        $priceYearly     = $postData['price_yearly'];
 
         $newListingId = $this->listingModel->insert([
             'unit_id'            => $unitId,
@@ -207,6 +218,17 @@ class Listings extends BaseController
             return redirect()->to('/provider/listings')->with('error', 'Listing tidak ditemukan.');
         }
 
+        // Bersihkan separator angka jika dikirim terformat dari inputmask
+        $postData = $this->request->getPost();
+        foreach (['price_monthly', 'price_six_monthly', 'price_yearly'] as $field) {
+            if (isset($postData[$field]) && $postData[$field] !== '') {
+                $cleaned = preg_replace('/[^\d]/', '', (string)$postData[$field]);
+                $postData[$field] = $cleaned !== '' ? $cleaned : null;
+            } else {
+                $postData[$field] = null;
+            }
+        }
+
         $rules = [
             'title'             => 'required|min_length[5]|max_length[255]',
             'description'       => 'required|min_length[10]',
@@ -215,7 +237,7 @@ class Listings extends BaseController
             'price_yearly'      => 'permit_empty|numeric',
         ];
 
-        if (! $this->validate($rules)) {
+        if (! $this->validateData($postData, $rules)) {
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
@@ -226,9 +248,9 @@ class Listings extends BaseController
             $publicationStatus = 'pending_review';
         }
 
-        $priceMonthly    = $this->request->getPost('price_monthly');
-        $priceSixMonthly = $this->request->getPost('price_six_monthly');
-        $priceYearly     = $this->request->getPost('price_yearly');
+        $priceMonthly    = $postData['price_monthly'];
+        $priceSixMonthly = $postData['price_six_monthly'];
+        $priceYearly     = $postData['price_yearly'];
 
         $updateData = [
             'title'              => $this->request->getPost('title'),

@@ -81,7 +81,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text font-weight-bold">Rp</span>
                                 </div>
-                                <input type="number" name="price_monthly" id="price_monthly" class="form-control font-weight-bold" value="<?= esc(old('price_monthly', $listing['price_monthly'] ?? '')) ?>" step="50000">
+                                <input type="text" inputmode="numeric" name="price_monthly" id="price_monthly" class="form-control font-weight-bold input-currency" placeholder="0" value="<?= esc(old('price_monthly', !empty($listing['price_monthly']) ? (int)$listing['price_monthly'] : '')) ?>">
                             </div>
                         </div>
 
@@ -91,7 +91,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text font-weight-bold">Rp</span>
                                 </div>
-                                <input type="number" name="price_six_monthly" id="price_six_monthly" class="form-control font-weight-bold" value="<?= esc(old('price_six_monthly', $listing['price_six_monthly'] ?? '')) ?>" step="50000">
+                                <input type="text" inputmode="numeric" name="price_six_monthly" id="price_six_monthly" class="form-control font-weight-bold input-currency" placeholder="0" value="<?= esc(old('price_six_monthly', !empty($listing['price_six_monthly']) ? (int)$listing['price_six_monthly'] : '')) ?>">
                             </div>
                         </div>
 
@@ -101,7 +101,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text font-weight-bold">Rp</span>
                                 </div>
-                                <input type="number" name="price_yearly" id="price_yearly" class="form-control font-weight-bold" value="<?= esc(old('price_yearly', $listing['price_yearly'] ?? '')) ?>" step="100000">
+                                <input type="text" inputmode="numeric" name="price_yearly" id="price_yearly" class="form-control font-weight-bold input-currency" placeholder="0" value="<?= esc(old('price_yearly', !empty($listing['price_yearly']) ? (int)$listing['price_yearly'] : '')) ?>">
                             </div>
                         </div>
                     </div>
@@ -153,4 +153,25 @@
         </div>
     </div>
 </form>
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
+<script src="<?= base_url('assets/vendor/jquery.inputmask.min.js') ?>"></script>
+<script>
+$(document).ready(function() {
+    $('.input-currency').inputmask({
+        alias: 'numeric',
+        groupSeparator: '.',
+        radixPoint: ',',
+        autoGroup: true,
+        digits: 0,
+        digitsOptional: false,
+        placeholder: '0',
+        rightAlign: false,
+        allowMinus: false,
+        removeMaskOnSubmit: true,
+        autoUnmask: true
+    });
+});
+</script>
 <?= $this->endSection() ?>

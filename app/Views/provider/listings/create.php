@@ -93,7 +93,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text font-weight-bold">Rp</span>
                                 </div>
-                                <input type="number" name="price_monthly" id="price_monthly" class="form-control font-weight-bold" placeholder="Contoh: 1250000" value="<?= old('price_monthly') ?>" step="50000">
+                                <input type="text" inputmode="numeric" name="price_monthly" id="price_monthly" class="form-control font-weight-bold input-currency" placeholder="0" value="<?= esc(old('price_monthly')) ?>">
                             </div>
                             <small class="text-muted">Kosongkan jika hanya menerima sewa jangka panjang.</small>
                         </div>
@@ -104,7 +104,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text font-weight-bold">Rp</span>
                                 </div>
-                                <input type="number" name="price_six_monthly" id="price_six_monthly" class="form-control font-weight-bold" placeholder="Contoh: 7200000" value="<?= old('price_six_monthly') ?>" step="50000">
+                                <input type="text" inputmode="numeric" name="price_six_monthly" id="price_six_monthly" class="form-control font-weight-bold input-currency" placeholder="0" value="<?= esc(old('price_six_monthly')) ?>">
                             </div>
                             <small class="text-muted">Opsional, paket sewa per 6 bulan (semester).</small>
                         </div>
@@ -115,7 +115,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text font-weight-bold">Rp</span>
                                 </div>
-                                <input type="number" name="price_yearly" id="price_yearly" class="form-control font-weight-bold" placeholder="Contoh: 14000000" value="<?= old('price_yearly') ?>" step="100000">
+                                <input type="text" inputmode="numeric" name="price_yearly" id="price_yearly" class="form-control font-weight-bold input-currency" placeholder="0" value="<?= esc(old('price_yearly')) ?>">
                             </div>
                             <small class="text-muted">Biasanya menawarkan diskon untuk sewa 1 tahun penuh.</small>
                         </div>
@@ -162,8 +162,10 @@
         </div>
     </div>
 </form>
+<?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
+<script src="<?= base_url('assets/vendor/jquery.inputmask.min.js') ?>"></script>
 <script>
     function updateDefaultTitle(select) {
         var opt = select.options[select.selectedIndex];
@@ -176,6 +178,21 @@
             }
         }
     }
+
+    $(document).ready(function() {
+        $('.input-currency').inputmask({
+            alias: 'numeric',
+            groupSeparator: '.',
+            radixPoint: ',',
+            autoGroup: true,
+            digits: 0,
+            digitsOptional: false,
+            placeholder: '0',
+            rightAlign: false,
+            allowMinus: false,
+            removeMaskOnSubmit: true,
+            autoUnmask: true
+        });
+    });
 </script>
-<?= $this->endSection() ?>
 <?= $this->endSection() ?>
