@@ -63,16 +63,20 @@
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <label for="region_id" class="form-label font-weight-bold">Wilayah / Region Operasional <span class="text-danger">*</span></label>
+                            <label for="region_id" class="form-label font-weight-bold">Wilayah Operasional <span class="text-danger">*</span></label>
                             <select name="region_id" id="region_id" class="form-control" required>
-                                <option value="">-- Pilih Wilayah Operasional --</option>
+                                <?php if (count($regions) > 1): ?>
+                                    <option value="">-- Pilih Wilayah Operasional --</option>
+                                <?php endif; ?>
                                 <?php foreach ($regions as $r): ?>
-                                    <option value="<?= $r['id'] ?>" <?= old('region_id') == $r['id'] ? 'selected' : '' ?>>
-                                        <?= esc($r['name']) ?> (<?= ucfirst($r['level']) ?>)
+                                    <option value="<?= $r['id'] ?>" <?= (old('region_id') == $r['id'] || count($regions) === 1) ? 'selected' : '' ?>>
+                                        <?= !empty($r['depth']) ? '&nbsp;&nbsp;↳ ' : '' ?><?= esc($r['name']) ?> (<?= ucfirst($r['level']) ?>)
                                     </option>
                                 <?php endforeach; ?>
                             </select>
-                            <small class="text-muted">Pilih kota/kecamatan tempat properti berada.</small>
+                            <small class="text-muted d-block mt-1">
+                                <i class="fas fa-lock text-teal mr-1"></i> Terikat pada wilayah operasional akun: <strong><?= esc($providerMainRegion['name'] ?? 'Wilayah Terdaftar') ?></strong>
+                            </small>
                         </div>
                     </div>
 

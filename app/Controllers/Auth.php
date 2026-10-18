@@ -69,6 +69,7 @@ class Auth extends BaseController
             'role'       => $user['role'],
             'gender'     => $user['gender'],
             'whatsapp'   => $user['whatsapp'],
+            'region_id'  => $user['region_id'] ?? null,
         ]);
 
         // Record Audit Trail
@@ -106,9 +107,13 @@ class Auth extends BaseController
             $defaultRole = 'tenant';
         }
 
+        $regionModel = new \App\Models\RegionModel();
+        $regions = $regionModel->getHierarchy();
+
         return view('auth/register', [
             'title'       => 'Daftar Akun Baru — KosAja',
             'defaultRole' => $defaultRole,
+            'regions'     => $regions,
         ]);
     }
 
@@ -127,12 +132,21 @@ class Auth extends BaseController
             'password_confirm' => 'required|matches[password]',
         ];
 
+        $role = $this->request->getPost('role');
+        if ($role === 'provider') {
+            $rules['region_id'] = 'required|is_not_unique[regions.id]';
+        }
+
         $messages = [
             'email' => [
                 'is_unique' => 'Email ini sudah digunakan. Silakan gunakan email lain atau langsung Masuk.',
             ],
             'gender' => [
                 'required' => 'Pilihan jenis kelamin wajib diisi demi kepatuhan Syariat hunian.',
+            ],
+            'region_id' => [
+                'required'      => 'Wilayah operasional wajib dipilih bagi mitra Penyedia.',
+                'is_not_unique' => 'Pilihan wilayah operasional tidak valid.',
             ],
             'password_confirm' => [
                 'matches' => 'Konfirmasi password tidak cocok dengan password yang dimasukkan.',
@@ -143,7 +157,7 @@ class Auth extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        $role = $this->request->getPost('role');
+        $regionId = ($role === 'provider') ? (int) $this->request->getPost('region_id') : null;
 
         $userData = [
             'name'       => $this->request->getPost('name'),
@@ -152,6 +166,7 @@ class Auth extends BaseController
             'whatsapp'   => $this->request->getPost('whatsapp'),
             'gender'     => $this->request->getPost('gender'),
             'role'       => $role,
+            'region_id'  => $regionId,
             'status'     => 'active',
         ];
 
@@ -240,6 +255,7 @@ class Auth extends BaseController
                 'role'       => $targetUser['role'],
                 'gender'     => $targetUser['gender'],
                 'whatsapp'   => $targetUser['whatsapp'],
+                'region_id'  => $targetUser['region_id'] ?? null,
             ]);
 
             $this->auditModel->record(

@@ -50,7 +50,9 @@ class Properties extends BaseController
      */
     public function create()
     {
-        $regions = $this->regionModel->getHierarchy();
+        $providerId = session()->get('user_id') ?? 3;
+        $regions = $this->getProviderAllowedRegions($providerId);
+        $providerMainRegion = $this->getProviderMainRegion($providerId);
 
         $facilityPresets = [
             'WiFi Berkecepatan Tinggi',
@@ -67,11 +69,12 @@ class Properties extends BaseController
         ];
 
         return view('provider/properties/create', [
-            'title'           => 'Tambah Properti Baru — KosAja',
-            'role'            => 'provider',
-            'activeMenu'      => 'properties',
-            'regions'         => $regions,
-            'facilityPresets' => $facilityPresets,
+            'title'              => 'Tambah Properti Baru — KosAja',
+            'role'               => 'provider',
+            'activeMenu'         => 'properties',
+            'regions'            => $regions,
+            'providerMainRegion' => $providerMainRegion,
+            'facilityPresets'    => $facilityPresets,
         ]);
     }
 
@@ -115,9 +118,18 @@ class Properties extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
+        // Validate provider's authorized regional boundary
+        $allowedRegions = $this->getProviderAllowedRegions($providerId);
+        $allowedRegionIds = array_map(fn($r) => (int) $r['id'], $allowedRegions);
+        $postedRegionId = (int) $this->request->getPost('region_id');
+
+        if (! empty($allowedRegionIds) && ! in_array($postedRegionId, $allowedRegionIds, true)) {
+            return redirect()->back()->withInput()->with('error', 'Anda hanya diizinkan mendaftarkan properti di wilayah operasional yang terdaftar pada akun Anda.');
+        }
+
         $propertyData = [
             'provider_id'   => $providerId,
-            'region_id'     => (int) $this->request->getPost('region_id'),
+            'region_id'     => $postedRegionId,
             'name'          => $this->request->getPost('name'),
             'type'          => $this->request->getPost('type'),
             'target_gender' => $this->request->getPost('target_gender'),
@@ -204,7 +216,9 @@ class Properties extends BaseController
             return redirect()->to('/provider/properties')->with('error', 'Properti tidak ditemukan.');
         }
 
-        $regions = $this->regionModel->getHierarchy();
+        $regions = $this->getProviderAllowedRegions($providerId);
+        $providerMainRegion = $this->getProviderMainRegion($providerId);
+
         $facilityPresets = [
             'WiFi Berkecepatan Tinggi',
             'Dapur Bersama + Kulkas',
@@ -227,6 +241,7 @@ class Properties extends BaseController
             'activeMenu'           => 'properties',
             'property'             => $property,
             'regions'              => $regions,
+            'providerMainRegion'   => $providerMainRegion,
             'facilityPresets'      => $facilityPresets,
             'currentFacilityNames' => $currentFacilityNames,
         ]);
@@ -260,8 +275,17 @@ class Properties extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
+        // Validate provider's authorized regional boundary
+        $allowedRegions = $this->getProviderAllowedRegions($providerId);
+        $allowedRegionIds = array_map(fn($r) => (int) $r['id'], $allowedRegions);
+        $postedRegionId = (int) $this->request->getPost('region_id');
+
+        if (! empty($allowedRegionIds) && ! in_array($postedRegionId, $allowedRegionIds, true)) {
+            return redirect()->back()->withInput()->with('error', 'Anda hanya diizinkan memperbarui properti di wilayah operasional yang terdaftar pada akun Anda.');
+        }
+
         $updateData = [
-            'region_id'     => (int) $this->request->getPost('region_id'),
+            'region_id'     => $postedRegionId,
             'name'          => $this->request->getPost('name'),
             'type'          => $this->request->getPost('type'),
             'target_gender' => $this->request->getPost('target_gender'),
@@ -379,5 +403,49 @@ class Properties extends BaseController
         $this->photoModel->setPrimary($propertyId, $photoId);
 
         return redirect()->back()->with('success', 'Foto utama berhasil diperbarui.');
+    }
+
+    /**
+     * Get allowed operational regions for this provider based on registered region_id
+     */
+    protected function getProviderAllowedRegions(int $providerId): array
+    {
+        $db = \Config\Database::connect();
+        $user = $db->table('users')->where('id', $providerId)->get()->getRowArray();
+
+        if (empty($user['region_id'])) {
+            return $this->regionModel->getHierarchy();
+        }
+
+        $regionId = (int) $user['region_id'];
+        $mainRegion = $this->regionModel->find($regionId);
+        if (! $mainRegion) {
+            return $this->regionModel->getHierarchy();
+        }
+
+        // Include the registered region and all its direct children (operational clusters)
+        $children = $this->regionModel->where('parent_id', $regionId)->orderBy('name', 'ASC')->findAll();
+        
+        $mainRegion['depth'] = 0;
+        $allowed = [$mainRegion];
+        foreach ($children as $c) {
+            $c['depth'] = 1;
+            $allowed[] = $c;
+        }
+
+        return $allowed;
+    }
+
+    /**
+     * Get provider's main registered region info
+     */
+    protected function getProviderMainRegion(int $providerId): ?array
+    {
+        $db = \Config\Database::connect();
+        $user = $db->table('users')->where('id', $providerId)->get()->getRowArray();
+        if (! empty($user['region_id'])) {
+            return $this->regionModel->find((int) $user['region_id']);
+        }
+        return null;
     }
 }

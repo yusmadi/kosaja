@@ -45,6 +45,18 @@
     </div>
 <?php endif; ?>
 
+<!-- Scope Alert Banner -->
+<div class="alert alert-light border shadow-sm mb-3 d-flex flex-wrap align-items-center justify-content-between">
+    <div>
+        <i class="fas fa-shield-halved text-teal mr-2"></i>
+        <strong>Otoritas Wilayah Penugasan:</strong>
+        <span class="badge badge-teal text-white ml-1"><?= esc($scopedLabel) ?></span>
+    </div>
+    <small class="text-muted mt-1 mt-sm-0">
+        <?= $isSuperAdmin ? 'Super Admin memiliki wewenang penuh memantau & memoderasi seluruh wilayah Indonesia.' : 'Admin Daerah berwenang memeriksa dan memverifikasi dokumen mitra di wilayah tugas ini.' ?>
+    </small>
+</div>
+
 <!-- Filter Tabs -->
 <div class="mb-3">
     <div class="btn-group shadow-sm">
@@ -80,6 +92,7 @@
                 <thead class="bg-light">
                     <tr>
                         <th>Mitra & Kontak</th>
+                        <th>Wilayah Operasional</th>
                         <th>Status KYC</th>
                         <th>Dokumen KTP</th>
                         <th>Rekening Bank</th>
@@ -95,6 +108,11 @@
                                     <div class="font-weight-bold text-dark"><?= esc($p['name']) ?></div>
                                     <small class="text-muted d-block"><i class="fas fa-envelope mr-1"></i> <?= esc($p['email']) ?></small>
                                     <small class="text-muted d-block"><i class="fab fa-whatsapp text-success mr-1"></i> <?= esc($p['whatsapp'] ?? '-') ?></small>
+                                </td>
+                                <td>
+                                    <span class="badge badge-light border text-dark font-weight-bold">
+                                        <i class="fas fa-map-marker-alt text-danger mr-1"></i> <?= esc($p['region_name'] ?? 'Belum Ditugaskan') ?>
+                                    </span>
                                 </td>
                                 <td>
                                     <?php $st = $p['verification_status'] ?? 'pending'; ?>
@@ -191,7 +209,7 @@
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">
+                            <td colspan="7" class="text-center py-4 text-muted">
                                 <i class="fas fa-folder-open fa-2x mb-2 d-block"></i>
                                 Tidak ada data penyedia dengan status yang dipilih.
                             </td>

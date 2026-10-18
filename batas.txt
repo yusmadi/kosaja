@@ -1,0 +1,13 @@
+batas
+   perbaikan pendaftaran PENYEDIA, yaitu dengan menambahkan WILATAH OPERASIONAL
+   sehingga verifikasi PENYEDIA dapat dilakukan oleh ADMIN DAERAH
+
+selanjutnya
+   uji fungsi verifikasi PENYEDIA di role ADMIN DAERAH, dan hilangkan
+   fungsi verifikasi PENYEDIA yang ada di role SUPER ADMIN.
+
+   uji fungsi verifikasi PENYEDIA
+
+masalah
+   setelah perbaikan pendaftaran PENYEDIA, ternyata fungsi verifikasi
+   PENYEDIA di role ADMIN DAERAH belum ada. cek

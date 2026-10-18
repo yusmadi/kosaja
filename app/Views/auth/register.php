@@ -106,6 +106,27 @@
 
                         <!-- Provider-specific fields -->
                         <div id="providerFields" style="display: none;">
+                            <!-- Wilayah Operasional Kos -->
+                            <div class="mb-3">
+                                <label for="provider_region_id" class="form-label small fw-bold text-muted text-uppercase">
+                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i> Wilayah Operasional Kos <span class="text-danger">*</span>
+                                </label>
+                                <select name="region_id" id="provider_region_id" class="form-select">
+                                    <option value="">-- Pilih Wilayah Operasional (Kabupaten / Kota) --</option>
+                                    <?php if (!empty($regions)): ?>
+                                        <?php foreach ($regions as $r): ?>
+                                            <option value="<?= $r['id'] ?>" <?= old('region_id') == $r['id'] ? 'selected' : '' ?>>
+                                                <?= str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', $r['depth'] ?? 0) ?>
+                                                <?= ($r['depth'] ?? 0) > 0 ? '↳ ' : '' ?><?= esc($r['name']) ?> (<?= ucfirst($r['level']) ?>)
+                                            </option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                                <div class="form-text small text-muted">
+                                    <i class="bi bi-shield-check text-teal me-1"></i> <strong>Aturan Wilayah:</strong> Akun penyedia hanya dapat mendaftarkan kos di wilayah ini. Verifikasi akun Anda akan diproses langsung oleh <strong>Admin Daerah</strong> wilayah tersebut.
+                                </div>
+                            </div>
+
                             <div class="p-3 bg-teal bg-opacity-10 rounded-3 border border-teal mb-3">
                                 <div class="fw-bold small text-teal mb-1"><i class="bi bi-gift-fill me-1"></i> Promo Bebas Listing Fee (30 Hari / Transaksi Sewa Pertama)!</div>
                                 <div class="small text-muted" style="font-size: 0.8rem;">Rekening ini digunakan untuk penyaluran *settlement* sewa langsung dari penyewa.</div>
@@ -156,8 +177,10 @@
     function toggleProviderFields() {
         if ($('#roleProvider').is(':checked')) {
             $('#providerFields').slideDown(200);
+            $('#provider_region_id').attr('required', true);
         } else {
             $('#providerFields').slideUp(200);
+            $('#provider_region_id').removeAttr('required');
         }
     }
 

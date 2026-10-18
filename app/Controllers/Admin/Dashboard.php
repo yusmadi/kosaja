@@ -156,10 +156,8 @@ class Dashboard extends BaseController
         $pendingKYC = $db->table('users')
             ->select('users.id')
             ->join('provider_profiles', 'provider_profiles.user_id = users.id')
-            ->join('properties', 'properties.provider_id = users.id')
-            ->whereIn('properties.region_id', $scopedRegionIds)
+            ->whereIn('users.region_id', ! empty($scopedRegionIds) ? $scopedRegionIds : [0])
             ->where('provider_profiles.verification_status', 'pending')
-            ->distinct()
             ->countAllResults();
 
         // Pending Listing Moderation in Region
@@ -188,10 +186,8 @@ class Dashboard extends BaseController
         $restrictedProviders = $db->table('users')
             ->select('users.id')
             ->join('provider_profiles', 'provider_profiles.user_id = users.id')
-            ->join('properties', 'properties.provider_id = users.id')
-            ->whereIn('properties.region_id', $scopedRegionIds)
+            ->whereIn('users.region_id', ! empty($scopedRegionIds) ? $scopedRegionIds : [0])
             ->where('provider_profiles.verification_status', 'suspended')
-            ->distinct()
             ->countAllResults();
 
         $inactiveListings = $db->table('listings')

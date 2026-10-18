@@ -29,10 +29,11 @@ class Providers extends BaseController
 
         $db = \Config\Database::connect();
         $builder = $db->table('users')
-            ->select('users.*, provider_profiles.id as profile_id, provider_profiles.verification_status, provider_profiles.rejection_reason, provider_profiles.id_card_photo, provider_profiles.bank_name, provider_profiles.bank_account_number, provider_profiles.free_period_end,
+            ->select('users.*, regions.name as region_name, provider_profiles.id as profile_id, provider_profiles.verification_status, provider_profiles.rejection_reason, provider_profiles.id_card_photo, provider_profiles.bank_name, provider_profiles.bank_account_number, provider_profiles.free_period_end,
                 (SELECT COUNT(*) FROM properties WHERE properties.provider_id = users.id) as total_properties,
                 (SELECT COUNT(*) FROM units JOIN properties ON properties.id = units.property_id WHERE properties.provider_id = users.id) as total_units')
             ->join('provider_profiles', 'provider_profiles.user_id = users.id', 'left')
+            ->join('regions', 'regions.id = users.region_id', 'left')
             ->where('users.role', 'provider');
 
         $scopeService = new \App\Libraries\AdminScopeService();
@@ -40,9 +41,7 @@ class Providers extends BaseController
         $scopedRegionIds = $scopeService->getScopedRegionIds();
 
         if (! $isSuperAdmin) {
-            $builder->join('properties', 'properties.provider_id = users.id')
-                    ->whereIn('properties.region_id', ! empty($scopedRegionIds) ? $scopedRegionIds : [0])
-                    ->groupBy('users.id');
+            $builder->whereIn('users.region_id', ! empty($scopedRegionIds) ? $scopedRegionIds : [0]);
         }
 
         $allProviders = $builder->orderBy('users.id', 'DESC')->get()->getResultArray();
@@ -66,7 +65,7 @@ class Providers extends BaseController
         }
 
         return view('admin/providers/index', [
-            'title'        => $isSuperAdmin ? 'Mitra Penyedia Global (SA-03) — Super Admin' : 'Verifikasi Mitra Provider (ADM-02) — Admin Daerah',
+            'title'        => $isSuperAdmin ? 'Mitra Penyedia Global (SA-03) — Super Admin' : 'Verifikasi Mitra Provider (ADM-02) — Admin ' . esc($scopeService->getScopedRegionLabel()),
             'role'         => session()->get('role') ?? ($isSuperAdmin ? 'super_admin' : 'admin_daerah'),
             'activeMenu'   => 'providers',
             'providers'    => $providers,
@@ -85,6 +84,15 @@ class Providers extends BaseController
         $profile = $this->providerProfileModel->find($profileId);
         if (! $profile) {
             return redirect()->back()->with('error', 'Profil provider tidak ditemukan.');
+        }
+
+        $scopeService = new \App\Libraries\AdminScopeService();
+        if (! $scopeService->isSuperAdmin()) {
+            $scopedRegionIds = $scopeService->getScopedRegionIds() ?? [];
+            $targetUser = $this->userModel->find($profile['user_id']);
+            if (! $targetUser || ! in_array((int) ($targetUser['region_id'] ?? 0), $scopedRegionIds)) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk memverifikasi mitra di luar wilayah tugas Anda.');
+            }
         }
 
         $previousState = $profile;
@@ -119,6 +127,15 @@ class Providers extends BaseController
         $profile = $this->providerProfileModel->find($profileId);
         if (! $profile) {
             return redirect()->back()->with('error', 'Profil provider tidak ditemukan.');
+        }
+
+        $scopeService = new \App\Libraries\AdminScopeService();
+        if (! $scopeService->isSuperAdmin()) {
+            $scopedRegionIds = $scopeService->getScopedRegionIds() ?? [];
+            $targetUser = $this->userModel->find($profile['user_id']);
+            if (! $targetUser || ! in_array((int) ($targetUser['region_id'] ?? 0), $scopedRegionIds)) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk menolak mitra di luar wilayah tugas Anda.');
+            }
         }
 
         $reason = $this->request->getPost('reason');
@@ -158,6 +175,15 @@ class Providers extends BaseController
         $profile = $this->providerProfileModel->find($profileId);
         if (! $profile) {
             return redirect()->back()->with('error', 'Profil provider tidak ditemukan.');
+        }
+
+        $scopeService = new \App\Libraries\AdminScopeService();
+        if (! $scopeService->isSuperAdmin()) {
+            $scopedRegionIds = $scopeService->getScopedRegionIds() ?? [];
+            $targetUser = $this->userModel->find($profile['user_id']);
+            if (! $targetUser || ! in_array((int) ($targetUser['region_id'] ?? 0), $scopedRegionIds)) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk menangguhkan mitra di luar wilayah tugas Anda.');
+            }
         }
 
         $reason = $this->request->getPost('reason') ?? 'Pelanggaran syarat & ketentuan platform.';
