@@ -149,14 +149,18 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="text-uppercase text-muted font-weight-bold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Kapasitas Listing (Free Tier)</span>
-                    <span class="badge badge-pill badge-primary">Free Tier Kuota</span>
+                    <?php if ($stats['remaining_capacity'] <= 0): ?>
+                        <span class="badge badge-pill badge-warning text-dark font-weight-bold"><i class="fas fa-lock mr-1"></i> Kuota Penuh</span>
+                    <?php else: ?>
+                        <span class="badge badge-pill badge-primary">Free Tier (3 Listing)</span>
+                    <?php endif; ?>
                 </div>
                 <div class="d-flex align-items-baseline mb-3">
                     <h2 class="display-5 font-weight-bold mb-0 text-primary"><?= $stats['total_listings'] ?> <small class="text-muted font-weight-normal h5">/ <?= $stats['max_free_listings'] ?></small></h2>
                     <span class="text-muted ml-2 small">slot iklan terpakai</span>
                 </div>
                 <div class="progress mb-3" style="height: 10px; border-radius: 6px;">
-                    <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $stats['listing_capacity_percent'] ?>%;" aria-valuenow="<?= $stats['listing_capacity_percent'] ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                    <div class="progress-bar <?= $stats['remaining_capacity'] <= 0 ? 'bg-warning' : 'bg-primary' ?>" role="progressbar" style="width: <?= $stats['listing_capacity_percent'] ?>%;" aria-valuenow="<?= $stats['listing_capacity_percent'] ?>" aria-valuemin="0" aria-valuemax="100"></div>
                 </div>
                 <div class="d-flex justify-content-between text-xs text-muted pt-1 border-top">
                     <span><i class="fas fa-check-circle text-success mr-1"></i> Published: <strong><?= $stats['published_listings'] ?></strong></span>

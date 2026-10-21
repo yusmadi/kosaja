@@ -53,14 +53,24 @@ class Listings extends BaseController
             'inactive'       => count(array_filter($allListings, fn($l) => $l['publication_status'] === 'inactive')),
         ];
 
+        // Quota check (Free Tier Starter = 3 listings)
+        $maxFreeListings = 3;
+        $totalListings = count($allListings);
+        $remainingListingQuota = max(0, $maxFreeListings - $totalListings);
+        $isQuotaFull = ($totalListings >= $maxFreeListings);
+
         return view('provider/listings/index', [
-            'title'         => 'Manajemen Listing Iklan — KosAja',
-            'role'          => 'provider',
-            'activeMenu'    => 'listings',
-            'listings'      => $listings,
-            'unlistedUnits' => $unlistedUnits,
-            'counts'        => $counts,
-            'statusFilter'  => $statusFilter,
+            'title'                 => 'Manajemen Listing Iklan — KosAja',
+            'role'                  => 'provider',
+            'activeMenu'            => 'listings',
+            'listings'              => $listings,
+            'unlistedUnits'         => $unlistedUnits,
+            'counts'                => $counts,
+            'statusFilter'          => $statusFilter,
+            'maxFreeListings'       => $maxFreeListings,
+            'totalListings'         => $totalListings,
+            'remainingListingQuota' => $remainingListingQuota,
+            'isQuotaFull'           => $isQuotaFull,
         ]);
     }
 
@@ -70,6 +80,15 @@ class Listings extends BaseController
     public function create(?int $selectedUnitId = null)
     {
         $providerId = session()->get('user_id') ?? 3;
+
+        // Quota check enforcement (Free Tier Starter = 3 listings)
+        $maxFreeListings = 3;
+        $allListings = $this->listingModel->getListingsByProvider($providerId);
+        $totalListings = count($allListings);
+        if ($totalListings >= $maxFreeListings) {
+            return redirect()->to('/provider/listings')->with('warning', "Kapasitas kuota listing gratis ({$maxFreeListings} iklan) telah tercapai. Silakan kelola listing yang ada atau tingkatkan paket langganan Anda.");
+        }
+
         $unlistedUnits = $this->unitModel->getUnitsWithoutListing($providerId);
 
         if (empty($unlistedUnits)) {
@@ -87,11 +106,13 @@ class Listings extends BaseController
         }
 
         return view('provider/listings/create', [
-            'title'         => 'Buat Listing Iklan Baru — KosAja',
-            'role'          => 'provider',
-            'activeMenu'    => 'listings',
-            'unlistedUnits' => $unlistedUnits,
-            'selectedUnit'  => $selectedUnit,
+            'title'           => 'Buat Listing Iklan Baru — KosAja',
+            'role'            => 'provider',
+            'activeMenu'      => 'listings',
+            'unlistedUnits'   => $unlistedUnits,
+            'selectedUnit'    => $selectedUnit,
+            'maxFreeListings' => $maxFreeListings,
+            'totalListings'   => $totalListings,
         ]);
     }
 
@@ -101,6 +122,14 @@ class Listings extends BaseController
     public function store()
     {
         $providerId = session()->get('user_id') ?? 3;
+
+        // Quota check enforcement (Free Tier Starter = 3 listings)
+        $maxFreeListings = 3;
+        $allListings = $this->listingModel->getListingsByProvider($providerId);
+        if (count($allListings) >= $maxFreeListings) {
+            return redirect()->to('/provider/listings')->with('error', "Gagal membuat listing iklan: Anda telah mencapai batas maksimal kuota gratis ({$maxFreeListings} iklan). Tingkatkan paket langganan untuk menambah kuota iklan.");
+        }
+
         $unitId = (int) $this->request->getPost('unit_id');
 
         // Verify unit belongs to this provider and has no listing

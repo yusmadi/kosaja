@@ -158,6 +158,11 @@
 <?= $this->section('scripts') ?>
 <script src="<?= base_url('assets/vendor/jquery.inputmask.min.js') ?>"></script>
 <script>
+if (typeof $.fn.inputmask === 'undefined') {
+    document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.9/jquery.inputmask.min.js"><\/script>');
+}
+</script>
+<script>
 $(document).ready(function() {
     $('.input-currency').inputmask({
         alias: 'numeric',
@@ -166,11 +171,10 @@ $(document).ready(function() {
         autoGroup: true,
         digits: 0,
         digitsOptional: false,
-        placeholder: '0',
+        placeholder: '',
         rightAlign: false,
         allowMinus: false,
-        removeMaskOnSubmit: true,
-        autoUnmask: true
+        removeMaskOnSubmit: true
     });
 });
 </script>

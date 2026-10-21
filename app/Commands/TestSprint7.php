@@ -212,9 +212,9 @@ class TestSprint7 extends BaseCommand
         CLI::write("   - Tingkat Okupansi: {$occupancyRate}%", 'green');
 
         $totalListings = $db->table('listings')->countAllResults();
-        $maxFreeListings = 5;
+        $maxFreeListings = 3;
         $remainingListingQuota = max(0, $maxFreeListings - $totalListings);
-        CLI::write("   - Kuota Listing Free Tier: 5 Listing", 'cyan');
+        CLI::write("   - Kuota Listing Free Tier: 3 Listing", 'cyan');
         CLI::write("   - Listing Terpakai: {$totalListings} Listing", 'cyan');
         CLI::write("   - Sisa Kapasitas Kuota: {$remainingListingQuota} Listing", 'green');
 

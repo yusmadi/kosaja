@@ -10,9 +10,18 @@
             <p class="text-muted small mb-0">Publikasikan unit kamar Anda ke marketplace agar dapat ditemukan calon penyewa.</p>
         </div>
         <div class="col-sm-6 text-sm-right mt-2 mt-sm-0">
-            <a href="<?= base_url('/provider/listings/create') ?>" class="btn btn-teal text-white btn-sm shadow-sm font-weight-bold">
-                <i class="fas fa-plus-circle mr-1"></i> Buat Listing Iklan Baru
-            </a>
+            <span class="badge badge-light border mr-2 py-2 px-3">
+                <i class="fas fa-boxes-stacked text-primary mr-1"></i> Kuota Free: <strong><?= $totalListings ?? 0 ?> / <?= $maxFreeListings ?? 3 ?></strong>
+            </span>
+            <?php if (!empty($isQuotaFull)): ?>
+                <button class="btn btn-secondary btn-sm shadow-sm font-weight-bold" disabled title="Batas kuota 3 listing telah tercapai">
+                    <i class="fas fa-lock mr-1"></i> Kuota Penuh (<?= $maxFreeListings ?>/<?= $maxFreeListings ?>)
+                </button>
+            <?php else: ?>
+                <a href="<?= base_url('/provider/listings/create') ?>" class="btn btn-teal text-white btn-sm shadow-sm font-weight-bold">
+                    <i class="fas fa-plus-circle mr-1"></i> Buat Listing Iklan Baru
+                </a>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -45,6 +54,18 @@
     </div>
 <?php endif; ?>
 
+<?php if (!empty($isQuotaFull)): ?>
+    <div class="alert alert-info border-info shadow-sm mb-3 d-flex justify-content-between align-items-center">
+        <div>
+            <strong class="text-dark"><i class="fas fa-circle-info text-info mr-2"></i> Kapasitas Listing Gratis Telah Penuh (<?= $totalListings ?> / <?= $maxFreeListings ?> Iklan)</strong>
+            <p class="text-muted text-xs mb-0">Anda telah mencapai batas maksimal paket Starter/Free Tier (3 iklan). Untuk memasang iklan unit kamar lainnya, nonaktifkan/hapus draf iklan yang ada atau hubungi admin untuk upgrade paket langganan.</p>
+        </div>
+        <span class="badge badge-warning text-dark px-3 py-2 font-weight-bold">
+            <i class="fas fa-crown mr-1"></i> Paket Starter
+        </span>
+    </div>
+<?php endif; ?>
+
 <!-- Filter Tabs -->
 <div class="mb-3">
     <div class="btn-group shadow-sm">
@@ -73,9 +94,15 @@
             <strong class="text-teal"><i class="fas fa-lightbulb mr-1"></i> Ada <?= count($unlistedUnits) ?> unit kamar yang belum memiliki listing iklan!</strong>
             <p class="text-muted text-xs mb-0">Pasang listing agar unit kamar Anda dapat disewa oleh calon penghuni.</p>
         </div>
-        <a href="<?= base_url('/provider/listings/create') ?>" class="btn btn-xs btn-teal text-white font-weight-bold px-3">
-            <i class="fas fa-plus mr-1"></i> Pasang Iklan Sekarang
-        </a>
+        <?php if (!empty($isQuotaFull)): ?>
+            <span class="badge badge-light border text-muted py-2 px-3">
+                <i class="fas fa-lock text-warning mr-1"></i> Kuota Listing Penuh (<?= $totalListings ?>/<?= $maxFreeListings ?>)
+            </span>
+        <?php else: ?>
+            <a href="<?= base_url('/provider/listings/create') ?>" class="btn btn-xs btn-teal text-white font-weight-bold px-3">
+                <i class="fas fa-plus mr-1"></i> Pasang Iklan Sekarang
+            </a>
+        <?php endif; ?>
     </div>
 <?php endif; ?>
 

@@ -10,6 +10,9 @@
             <p class="text-muted small mb-0">Publikasikan unit kamar fisik Anda ke etalase pencarian kos/kontrakan.</p>
         </div>
         <div class="col-sm-6 text-sm-right mt-2 mt-sm-0">
+            <span class="badge badge-light border mr-2 py-2 px-3">
+                <i class="fas fa-boxes-stacked text-primary mr-1"></i> Kuota Free: <strong><?= ($totalListings ?? 0) ?> / <?= ($maxFreeListings ?? 3) ?></strong>
+            </span>
             <a href="<?= base_url('/provider/listings') ?>" class="btn btn-outline-secondary btn-sm">
                 <i class="fas fa-arrow-left mr-1"></i> Batal & Kembali
             </a>
@@ -167,6 +170,11 @@
 <?= $this->section('scripts') ?>
 <script src="<?= base_url('assets/vendor/jquery.inputmask.min.js') ?>"></script>
 <script>
+if (typeof $.fn.inputmask === 'undefined') {
+    document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.9/jquery.inputmask.min.js"><\/script>');
+}
+</script>
+<script>
     function updateDefaultTitle(select) {
         var opt = select.options[select.selectedIndex];
         if (opt && opt.value) {
@@ -187,11 +195,10 @@
             autoGroup: true,
             digits: 0,
             digitsOptional: false,
-            placeholder: '0',
+            placeholder: '',
             rightAlign: false,
             allowMinus: false,
-            removeMaskOnSubmit: true,
-            autoUnmask: true
+            removeMaskOnSubmit: true
         });
     });
 </script>

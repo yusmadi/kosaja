@@ -51,8 +51,8 @@ class Dashboard extends BaseController
 
         $occupancyRate = $totalUnits > 0 ? round(($occupiedUnits / $totalUnits) * 100, 1) : 0;
 
-        // 2. Listing Capacity (Free Tier Quota = 5 Listings)
-        $maxFreeListings = 5;
+        // 2. Listing Capacity (Free Tier Quota = 3 Listings)
+        $maxFreeListings = 3;
         $totalListings = $db->table('listings')
             ->join('units', 'units.id = listings.unit_id')
             ->join('properties', 'properties.id = units.property_id')
