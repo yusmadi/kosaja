@@ -115,9 +115,10 @@
                                     <option value="">-- Pilih Wilayah Operasional (Kabupaten / Kota) --</option>
                                     <?php if (!empty($regions)): ?>
                                         <?php foreach ($regions as $r): ?>
-                                            <option value="<?= $r['id'] ?>" <?= old('region_id') == $r['id'] ? 'selected' : '' ?>>
+                                            <?php $isSelectable = ($r['level'] !== 'province'); ?>
+                                            <option value="<?= $r['id'] ?>" <?= old('region_id') == $r['id'] ? 'selected' : '' ?> <?= ! $isSelectable ? 'disabled class="fw-bold bg-light text-muted"' : '' ?>>
                                                 <?= str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', $r['depth'] ?? 0) ?>
-                                                <?= ($r['depth'] ?? 0) > 0 ? '↳ ' : '' ?><?= esc($r['name']) ?> (<?= ucfirst($r['level']) ?>)
+                                                <?= ($r['depth'] ?? 0) > 0 ? '↳ ' : '' ?><?= esc($r['name']) ?> <?= ! $isSelectable ? '(Provinsi - Pilih Kota/Kabupaten)' : '(' . ucfirst($r['level']) . ')' ?>
                                             </option>
                                         <?php endforeach; ?>
                                     <?php endif; ?>

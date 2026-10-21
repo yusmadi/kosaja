@@ -108,6 +108,110 @@
 <div class="row">
     <!-- Left Column: Queues for Moderation & Reports -->
     <div class="col-lg-8">
+        <!-- Queue 0: Pending Provider KYC Verification -->
+        <div class="card shadow-sm border-0 mb-3" style="border-left: 4px solid #f59e0b !important;">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h5 class="card-title font-weight-bold mb-0 text-dark">
+                    <i class="fas fa-user-check text-warning mr-2"></i> Antrean Verifikasi Identitas Mitra (KYC)
+                </h5>
+                <a href="<?= base_url('/admin/providers?status=pending') ?>" class="small font-weight-bold text-warning">
+                    Semua Antrean (<?= esc($stats['pending_kyc'] ?? 0) ?>) <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <?php if (! empty($providersQueue)): ?>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase">
+                            <tr>
+                                <th>Mitra &amp; Kontak</th>
+                                <th>Wilayah</th>
+                                <th>Dokumen KTP</th>
+                                <th>Rekening Bank</th>
+                                <th class="text-right">Tindakan Verifikasi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($providersQueue as $p): ?>
+                            <?php $actionId = !empty($p['profile_id']) ? $p['profile_id'] : $p['id']; ?>
+                            <tr>
+                                <td>
+                                    <div class="font-weight-bold text-dark"><?= esc($p['name']) ?></div>
+                                    <small class="text-muted d-block"><?= esc($p['email']) ?></small>
+                                    <small class="text-muted"><i class="fab fa-whatsapp text-success mr-1"></i> <?= esc($p['whatsapp'] ?? '-') ?></small>
+                                </td>
+                                <td>
+                                    <span class="badge badge-light border text-dark">
+                                        <i class="fas fa-map-marker-alt text-danger mr-1"></i> <?= esc($p['region_name'] ?? $scopedLabel) ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <?php if (!empty($p['id_card_photo'])): ?>
+                                        <a href="<?= \App\Libraries\StorageService::getUrl($p['id_card_photo']) ?>" target="_blank" class="btn btn-xs btn-outline-info">
+                                            <i class="fas fa-image mr-1"></i> Lihat KTP
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="text-muted small"><i class="fas fa-file mr-1"></i> Belum unggah</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <div class="small font-weight-bold text-dark"><?= esc($p['bank_name'] ?? 'BSI') ?></div>
+                                    <small class="text-muted"><?= esc($p['bank_account_number'] ?? '-') ?></small>
+                                </td>
+                                <td class="text-right">
+                                    <form action="<?= base_url('/admin/providers/verify/' . $actionId) ?>" method="post" class="d-inline">
+                                        <?= csrf_field() ?>
+                                        <button type="submit" class="btn btn-xs btn-success font-weight-bold" title="Setujui Verifikasi">
+                                            <i class="fas fa-check mr-1"></i> Setujui
+                                        </button>
+                                    </form>
+                                    <button type="button" class="btn btn-xs btn-outline-danger" data-toggle="modal" data-target="#quickRejectModal<?= $actionId ?>" title="Tolak">
+                                        <i class="fas fa-times mr-1"></i> Tolak
+                                    </button>
+
+                                    <!-- Quick Modal Tolak -->
+                                    <div class="modal fade text-left" id="quickRejectModal<?= $actionId ?>" tabindex="-1" role="dialog" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered" role="document">
+                                            <div class="modal-content">
+                                                <form action="<?= base_url('/admin/providers/reject/' . $actionId) ?>" method="post">
+                                                    <?= csrf_field() ?>
+                                                    <div class="modal-header bg-danger text-white">
+                                                        <h5 class="modal-title font-weight-bold"><i class="fas fa-exclamation-triangle mr-2"></i> Tolak Verifikasi Mitra</h5>
+                                                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p class="text-sm text-dark">
+                                                            Tolak pengajuan dari <strong><?= esc($p['name']) ?></strong>? Mohon berikan alasan spesifik:
+                                                        </p>
+                                                        <div class="form-group mb-0">
+                                                            <textarea name="reason" class="form-control" rows="3" placeholder="Alasan penolakan..." required></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                                                        <button type="submit" class="btn btn-danger btn-sm font-weight-bold">Konfirmasi Tolak</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php else: ?>
+                <div class="p-3 text-center text-muted">
+                    <i class="fas fa-circle-check fa-lg text-success mr-1"></i>
+                    <span class="small">Tidak ada antrean verifikasi mitra baru di wilayah <?= esc($scopedLabel) ?>.</span>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
         <!-- Queue 1: Pending Listings Needing Moderation -->
         <div class="card shadow-sm border-0 mb-3">
             <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">

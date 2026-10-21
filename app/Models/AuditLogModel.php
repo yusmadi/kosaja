@@ -142,7 +142,8 @@ class AuditLogModel extends Model
                 case 'reservations':
                     $row = $db->table('reservations')
                         ->select('properties.region_id')
-                        ->join('units', 'units.id = reservations.unit_id')
+                        ->join('rental_applications', 'rental_applications.id = reservations.application_id')
+                        ->join('units', 'units.id = rental_applications.unit_id')
                         ->join('properties', 'properties.id = units.property_id')
                         ->where('reservations.id', $objectId)
                         ->get()->getRowArray();
@@ -173,10 +174,14 @@ class AuditLogModel extends Model
                     break;
 
                 case 'provider_profile':
+                case 'provider_profiles':
                     $row = $db->table('provider_profiles')
                         ->select('properties.region_id')
                         ->join('properties', 'properties.provider_id = provider_profiles.user_id')
-                        ->where('provider_profiles.id', $objectId)
+                        ->groupStart()
+                            ->where('provider_profiles.id', $objectId)
+                            ->orWhere('provider_profiles.user_id', $objectId)
+                        ->groupEnd()
                         ->limit(1)
                         ->get()->getRowArray();
                     if (! empty($row['region_id'])) return (int) $row['region_id'];

@@ -198,6 +198,19 @@ class Dashboard extends BaseController
             ->countAllResults();
 
         // 2. Queue Items for Immediate Action
+        // Urgent Provider KYC Verifications to Review
+        $providersQueue = $db->table('users')
+            ->select('users.*, regions.name as region_name, provider_profiles.id as profile_id, provider_profiles.verification_status, provider_profiles.id_card_photo, provider_profiles.bank_name, provider_profiles.bank_account_number, provider_profiles.created_at as submitted_at')
+            ->join('provider_profiles', 'provider_profiles.user_id = users.id', 'left')
+            ->join('regions', 'regions.id = users.region_id', 'left')
+            ->where('users.role', 'provider')
+            ->whereIn('users.region_id', ! empty($scopedRegionIds) ? $scopedRegionIds : [0])
+            ->where('(provider_profiles.verification_status = "pending" OR provider_profiles.verification_status IS NULL)')
+            ->orderBy('users.id', 'DESC')
+            ->limit(5)
+            ->get()
+            ->getResultArray();
+
         // Urgent Listings to Review
         $listingsQueue = $db->table('listings')
             ->select('listings.*, units.name as unit_name, properties.name as property_name, properties.target_gender, users.name as provider_name, regions.name as region_name')
@@ -235,6 +248,7 @@ class Dashboard extends BaseController
                 'restricted_providers' => $restrictedProviders,
                 'inactive_listings'    => $inactiveListings,
             ],
+            'providersQueue'  => $providersQueue,
             'listingsQueue'   => $listingsQueue,
             'reportsQueue'    => $reportsQueue,
             'disputesQueue'   => $disputesQueue,

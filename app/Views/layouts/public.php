@@ -15,6 +15,8 @@
     <link rel="stylesheet" href="<?= base_url('assets/vendor/bootstrap/bootstrap.min.css') ?>">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
     <!-- KosAja Custom CSS -->
     <link rel="stylesheet" href="<?= base_url('assets/css/style.css') ?>">
@@ -144,8 +146,57 @@
     <!-- Vendor Scripts: jQuery & Bootstrap 5 Bundle -->
     <script src="<?= base_url('assets/vendor/jquery/jquery.min.js') ?>"></script>
     <script src="<?= base_url('assets/vendor/bootstrap/bootstrap.bundle.min.js') ?>"></script>
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- App Custom Script -->
     <script src="<?= base_url('assets/js/app.js') ?>"></script>
+
+    <!-- SweetAlert2 Global Flash Message Listener -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            <?php if (session()->getFlashdata('error')): ?>
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Perhatian / Terkendala',
+                    text: <?= json_encode(session()->getFlashdata('error')) ?>,
+                    confirmButtonColor: '#0d9488',
+                    confirmButtonText: 'Mengerti'
+                });
+            <?php elseif (session()->getFlashdata('errors')): ?>
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validasi Terkendala',
+                    html: <?= json_encode(implode('<br>', (array)session()->getFlashdata('errors'))) ?>,
+                    confirmButtonColor: '#0d9488',
+                    confirmButtonText: 'Mengerti'
+                });
+            <?php elseif (session()->getFlashdata('success')): ?>
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: <?= json_encode(session()->getFlashdata('success')) ?>,
+                    confirmButtonColor: '#0d9488',
+                    confirmButtonText: 'OK'
+                });
+            <?php elseif (session()->getFlashdata('warning')): ?>
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Peringatan',
+                    text: <?= json_encode(session()->getFlashdata('warning')) ?>,
+                    confirmButtonColor: '#0d9488',
+                    confirmButtonText: 'OK'
+                });
+            <?php elseif (session()->getFlashdata('info')): ?>
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Informasi',
+                    text: <?= json_encode(session()->getFlashdata('info')) ?>,
+                    confirmButtonColor: '#0d9488',
+                    confirmButtonText: 'OK'
+                });
+            <?php endif; ?>
+        });
+    </script>
 
     <?= $this->renderSection('scripts') ?>
 </body>

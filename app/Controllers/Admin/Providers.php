@@ -77,32 +77,59 @@ class Providers extends BaseController
     }
 
     /**
-     * Approve / Verify Provider
+     * Approve / Verify Provider (Admin Daerah Exclusive)
      */
     public function verify(int $profileId)
     {
+        $scopeService = new \App\Libraries\AdminScopeService();
+
+        // FR: Verification is exclusively delegated to Admin Daerah based on operational jurisdiction
+        if ($scopeService->isSuperAdmin()) {
+            return redirect()->back()->with('error', 'Super Admin tidak memiliki wewenang verifikasi langsung. Proses verifikasi dokumen identitas mitra merupakan kewenangan operasional Admin Daerah pada wilayah masing-masing.');
+        }
+
+        if (! $scopeService->isAdminDaerah()) {
+            return redirect()->back()->with('error', 'Hanya Admin Daerah yang berwenang memverifikasi dokumen mitra penyedia.');
+        }
+
         $profile = $this->providerProfileModel->find($profileId);
+        if (! $profile) {
+            // Fallback: check if $profileId was passed as user_id
+            $profile = $this->providerProfileModel->getByUserId($profileId);
+            if (! $profile) {
+                // If user exists as provider, auto-create profile
+                $user = $this->userModel->find($profileId);
+                if ($user && $user['role'] === 'provider') {
+                    $newProfileId = $this->providerProfileModel->insert([
+                        'user_id'             => $user['id'],
+                        'verification_status' => 'pending',
+                        'free_period_end'     => $this->providerProfileModel->calculateDefaultFreePeriodEnd(),
+                    ]);
+                    $profile = $this->providerProfileModel->find($newProfileId);
+                }
+            }
+        }
+
         if (! $profile) {
             return redirect()->back()->with('error', 'Profil provider tidak ditemukan.');
         }
 
-        $scopeService = new \App\Libraries\AdminScopeService();
-        if (! $scopeService->isSuperAdmin()) {
-            $scopedRegionIds = $scopeService->getScopedRegionIds() ?? [];
-            $targetUser = $this->userModel->find($profile['user_id']);
-            if (! $targetUser || ! in_array((int) ($targetUser['region_id'] ?? 0), $scopedRegionIds)) {
-                return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk memverifikasi mitra di luar wilayah tugas Anda.');
-            }
+        $actualProfileId = (int) $profile['id'];
+
+        $scopedRegionIds = $scopeService->getScopedRegionIds() ?? [];
+        $targetUser = $this->userModel->find($profile['user_id']);
+        if (! $targetUser || ! in_array((int) ($targetUser['region_id'] ?? 0), $scopedRegionIds, true)) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk memverifikasi mitra di luar wilayah yurisdiksi tugas Anda.');
         }
 
         $previousState = $profile;
 
-        $this->providerProfileModel->update($profileId, [
+        $this->providerProfileModel->update($actualProfileId, [
             'verification_status' => 'verified',
             'rejection_reason'    => null,
         ]);
 
-        $newState = $this->providerProfileModel->find($profileId);
+        $newState = $this->providerProfileModel->find($actualProfileId);
 
         // Record to audit logs
         $actorId = session()->get('user_id');
@@ -110,32 +137,46 @@ class Providers extends BaseController
             $actorId,
             'VERIFY_PROVIDER',
             'provider_profile',
-            $profileId,
+            $actualProfileId,
             $previousState,
             $newState,
-            'Dokumen identitas (KTP) dan nomor rekening valid.'
+            "Dokumen identitas (KTP) dan nomor rekening valid. Diverifikasi oleh Admin Daerah ({$scopeService->getScopedRegionLabel()})."
         );
 
         return redirect()->back()->with('success', 'Mitra provider berhasil diverifikasi (Status: Terverifikasi).');
     }
 
     /**
-     * Reject Provider Verification with Reason
+     * Reject Provider Verification with Reason (Admin Daerah Exclusive)
      */
     public function reject(int $profileId)
     {
+        $scopeService = new \App\Libraries\AdminScopeService();
+
+        // FR: Rejection is exclusively delegated to Admin Daerah
+        if ($scopeService->isSuperAdmin()) {
+            return redirect()->back()->with('error', 'Super Admin tidak memiliki wewenang penolakan verifikasi langsung. Proses moderasi dokumen mitra adalah kewenangan Admin Daerah.');
+        }
+
+        if (! $scopeService->isAdminDaerah()) {
+            return redirect()->back()->with('error', 'Hanya Admin Daerah yang berwenang menolak verifikasi mitra penyedia.');
+        }
+
         $profile = $this->providerProfileModel->find($profileId);
+        if (! $profile) {
+            $profile = $this->providerProfileModel->getByUserId($profileId);
+        }
+
         if (! $profile) {
             return redirect()->back()->with('error', 'Profil provider tidak ditemukan.');
         }
 
-        $scopeService = new \App\Libraries\AdminScopeService();
-        if (! $scopeService->isSuperAdmin()) {
-            $scopedRegionIds = $scopeService->getScopedRegionIds() ?? [];
-            $targetUser = $this->userModel->find($profile['user_id']);
-            if (! $targetUser || ! in_array((int) ($targetUser['region_id'] ?? 0), $scopedRegionIds)) {
-                return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk menolak mitra di luar wilayah tugas Anda.');
-            }
+        $actualProfileId = (int) $profile['id'];
+
+        $scopedRegionIds = $scopeService->getScopedRegionIds() ?? [];
+        $targetUser = $this->userModel->find($profile['user_id']);
+        if (! $targetUser || ! in_array((int) ($targetUser['region_id'] ?? 0), $scopedRegionIds, true)) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk menolak mitra di luar wilayah yurisdiksi tugas Anda.');
         }
 
         $reason = $this->request->getPost('reason');
@@ -145,12 +186,12 @@ class Providers extends BaseController
 
         $previousState = $profile;
 
-        $this->providerProfileModel->update($profileId, [
+        $this->providerProfileModel->update($actualProfileId, [
             'verification_status' => 'rejected',
             'rejection_reason'    => trim($reason),
         ]);
 
-        $newState = $this->providerProfileModel->find($profileId);
+        $newState = $this->providerProfileModel->find($actualProfileId);
 
         // Record to audit logs
         $actorId = session()->get('user_id');
@@ -158,7 +199,7 @@ class Providers extends BaseController
             $actorId,
             'REJECT_PROVIDER',
             'provider_profile',
-            $profileId,
+            $actualProfileId,
             $previousState,
             $newState,
             trim($reason)
@@ -174,14 +215,20 @@ class Providers extends BaseController
     {
         $profile = $this->providerProfileModel->find($profileId);
         if (! $profile) {
+            $profile = $this->providerProfileModel->getByUserId($profileId);
+        }
+
+        if (! $profile) {
             return redirect()->back()->with('error', 'Profil provider tidak ditemukan.');
         }
+
+        $actualProfileId = (int) $profile['id'];
 
         $scopeService = new \App\Libraries\AdminScopeService();
         if (! $scopeService->isSuperAdmin()) {
             $scopedRegionIds = $scopeService->getScopedRegionIds() ?? [];
             $targetUser = $this->userModel->find($profile['user_id']);
-            if (! $targetUser || ! in_array((int) ($targetUser['region_id'] ?? 0), $scopedRegionIds)) {
+            if (! $targetUser || ! in_array((int) ($targetUser['region_id'] ?? 0), $scopedRegionIds, true)) {
                 return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk menangguhkan mitra di luar wilayah tugas Anda.');
             }
         }
@@ -189,12 +236,12 @@ class Providers extends BaseController
         $reason = $this->request->getPost('reason') ?? 'Pelanggaran syarat & ketentuan platform.';
         $previousState = $profile;
 
-        $this->providerProfileModel->update($profileId, [
+        $this->providerProfileModel->update($actualProfileId, [
             'verification_status' => 'suspended',
             'rejection_reason'    => $reason,
         ]);
 
-        $newState = $this->providerProfileModel->find($profileId);
+        $newState = $this->providerProfileModel->find($actualProfileId);
 
         // Record to audit logs
         $actorId = session()->get('user_id');
@@ -202,7 +249,7 @@ class Providers extends BaseController
             $actorId,
             'SUSPEND_PROVIDER',
             'provider_profile',
-            $profileId,
+            $actualProfileId,
             $previousState,
             $newState,
             $reason

@@ -43,21 +43,35 @@ class Webhook extends BaseController
      * Handle incoming Payment Gateway Webhook
      * Route: POST /webhook/payment
      */
-    public function payment(): ResponseInterface
+    public function payment(?array $mockPayload = null): ResponseInterface
     {
         $request  = $this->request ?? service('request');
         $response = $this->response ?? service('response');
 
-        $rawInput = null;
-        if (method_exists($request, 'getJSON')) {
-            $rawInput = $request->getJSON(true);
+        $rawInput = $mockPayload;
+
+        if (empty($rawInput)) {
+            $contentType = method_exists($request, 'getHeaderLine') ? $request->getHeaderLine('Content-Type') : '';
+            if (str_contains(strtolower($contentType), 'json')) {
+                try {
+                    $rawInput = $request->getJSON(true);
+                } catch (\Throwable $e) {
+                    $rawInput = null;
+                }
+            }
         }
+
         if (empty($rawInput) && method_exists($request, 'getPost')) {
-            $rawInput = $request->getPost();
+            $post = $request->getPost();
+            if (! empty($post)) {
+                $rawInput = $post;
+            }
         }
+
         if (empty($rawInput) && !empty($_POST)) {
             $rawInput = $_POST;
         }
+
         if (empty($rawInput)) {
             $phpInput = @file_get_contents('php://input');
             if (!empty($phpInput)) {

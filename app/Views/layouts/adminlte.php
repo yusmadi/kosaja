@@ -103,15 +103,28 @@
                         <i class="fas fa-globe mr-2 text-danger"></i> <strong>Super Admin</strong>
                         <small class="d-block text-muted">Tata Kelola &amp; Pengawasan Nasional</small>
                     </a>
-                    <a href="<?= base_url('/switch-role/admin_daerah') ?>" class="dropdown-item <?= $sessionRole === 'admin_daerah' ? 'active bg-warning text-dark' : '' ?>">
+                    <a href="<?= base_url('/switch-role/2') ?>" class="dropdown-item <?= ($sessionRole === 'admin_daerah' && (session()->get('region_id') == 2 || (session()->get('user_id') == 2))) ? 'active bg-warning text-dark' : '' ?>">
                         <i class="fas fa-location-dot mr-2 text-warning"></i> <strong>Admin Daerah (Sleman)</strong>
-                        <small class="d-block text-muted">Antrean Moderasi &amp; Mediasi Regional</small>
+                        <small class="d-block text-muted">Antrean KYC &amp; Moderasi Sleman</small>
+                    </a>
+                    <a href="<?= base_url('/switch-role/19') ?>" class="dropdown-item <?= ($sessionRole === 'admin_daerah' && (session()->get('region_id') == 9 || (session()->get('user_id') == 19))) ? 'active bg-warning text-dark' : '' ?>">
+                        <i class="fas fa-location-dot mr-2 text-warning"></i> <strong>Admin Daerah (Banda Aceh)</strong>
+                        <small class="d-block text-muted">Antrean KYC &amp; Moderasi Banda Aceh</small>
                     </a>
                     <div class="dropdown-divider"></div>
-                    <a href="<?= base_url('/switch-role/provider') ?>" class="dropdown-item <?= $sessionRole === 'provider' ? 'active bg-teal text-white' : '' ?>">
-                        <i class="fas fa-store mr-2 text-teal"></i> <strong>Mitra Penyedia (Owner)</strong>
-                        <small class="d-block text-muted">Pengelolaan Properti &amp; Kamar Kos</small>
+                    <a href="<?= base_url('/switch-role/3') ?>" class="dropdown-item <?= ($sessionRole === 'provider' && session()->get('user_id') == 3) ? 'active bg-teal text-white' : '' ?>">
+                        <i class="fas fa-store mr-2 text-teal"></i> <strong>Mitra Penyedia (Sleman)</strong>
+                        <small class="d-block text-muted">Haji Ahmad Santoso (Terverifikasi)</small>
                     </a>
+                    <a href="<?= base_url('/switch-role/29') ?>" class="dropdown-item <?= ($sessionRole === 'provider' && session()->get('user_id') == 29) ? 'active bg-teal text-white' : '' ?>">
+                        <i class="fas fa-user-clock mr-2 text-warning"></i> <strong>Calon Mitra Pending (Sleman)</strong>
+                        <small class="d-block text-muted">Yusmadi (Status Pending KYC)</small>
+                    </a>
+                    <a href="<?= base_url('/switch-role/28') ?>" class="dropdown-item <?= ($sessionRole === 'provider' && session()->get('user_id') == 28) ? 'active bg-teal text-white' : '' ?>">
+                        <i class="fas fa-store mr-2 text-teal"></i> <strong>Mitra Penyedia (Banda Aceh)</strong>
+                        <small class="d-block text-muted">Yusmadi (Terverifikasi)</small>
+                    </a>
+                    <div class="dropdown-divider"></div>
                     <a href="<?= base_url('/switch-role/tenant') ?>" class="dropdown-item <?= $sessionRole === 'tenant' ? 'active bg-info text-white' : '' ?>">
                         <i class="fas fa-user mr-2 text-info"></i> <strong>Penyewa (Tenant)</strong>
                         <small class="d-block text-muted">Eksplorasi Kos, Sewa &amp; Tagihan</small>

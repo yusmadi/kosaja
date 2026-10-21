@@ -95,7 +95,7 @@ class PaymentGatewayService
 
         // Generic / Mock Webhook Format
         $orderId = $payload['order_id'] ?? '';
-        $status  = strtoupper($payload['status'] ?? 'SUCCESS');
+        $status  = strtoupper($payload['status'] ?? $payload['outcome'] ?? 'SUCCESS');
         $amount  = (float) ($payload['amount'] ?? 0);
         $payType = $payload['payment_method'] ?? 'bank_transfer_va';
         $trxId   = $payload['gateway_trx_id'] ?? ('SIM-' . strtoupper(bin2hex(random_bytes(5))));

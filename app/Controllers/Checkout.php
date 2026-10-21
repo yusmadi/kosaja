@@ -164,21 +164,33 @@ class Checkout extends BaseController
      */
     public function executeSimulation(int $reservationId)
     {
-        $orderId = $this->request->getPost('order_id');
-        $amount  = (float) $this->request->getPost('amount');
+        if (! session()->get('isLoggedIn')) {
+            return redirect()->to(base_url('/login'));
+        }
+
+        $userId = (int) session()->get('user_id');
+        $reservation = $this->reservationModel->getReservationWithDetails($reservationId);
+
+        if (! $reservation || (int) $reservation['tenant_id'] !== $userId) {
+            return redirect()->to(base_url('/applications'))->with('error', 'Data reservasi tidak valid.');
+        }
+
+        $orderId = $this->request->getPost('order_id') ?? ('KOS-' . $reservationId . '-' . date('ymdHis'));
+        $amount  = (float) ($this->request->getPost('amount') ?? ($reservation['rental_amount'] + ($reservation['gateway_fee'] > 0 ? $reservation['gateway_fee'] : 4500)));
         $method  = $this->request->getPost('payment_method') ?? 'bsi_va';
-        $outcome = $this->request->getPost('outcome') ?? 'SUCCESS';
+        $outcome = $this->request->getPost('outcome') ?? $this->request->getPost('status') ?? 'SUCCESS';
+
+        $payload = [
+            'order_id'       => $orderId,
+            'status'         => $outcome,
+            'outcome'        => $outcome,
+            'amount'         => $amount,
+            'payment_method' => $method,
+            'gateway_trx_id' => 'SIM-MID-' . strtoupper(bin2hex(random_bytes(4))),
+        ];
 
         $webhookController = new Webhook();
-        
-        // Mock request input
-        $_POST['order_id']       = $orderId;
-        $_POST['status']         = $outcome;
-        $_POST['amount']         = $amount;
-        $_POST['payment_method'] = $method;
-        $_POST['gateway_trx_id'] = 'SIM-MID-' . strtoupper(bin2hex(random_bytes(4)));
-
-        $response = $webhookController->payment();
+        $response = $webhookController->payment($payload);
         $json = json_decode($response->getBody(), true);
 
         if (isset($json['contract_id'])) {
@@ -191,6 +203,6 @@ class Checkout extends BaseController
                              ->with('error', 'Simulasi: Pembayaran transaksi dibatalkan / gagal.');
         }
 
-        return redirect()->to(base_url('/applications/' . $reservationId));
+        return redirect()->to(base_url('/applications/' . $reservation['application_id']));
     }
 }

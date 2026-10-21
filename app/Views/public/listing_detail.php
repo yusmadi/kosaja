@@ -284,11 +284,40 @@
                     </div>
 
                     <!-- Application CTA (Booking Engine) -->
+                    <?php 
+                        $isLoggedIn = (bool) session()->get('isLoggedIn');
+                        $userGender = $isLoggedIn ? strtoupper(session()->get('gender') ?? '') : '';
+                        $targetGender = strtolower($listing['target_gender'] ?? 'campur_keluarga');
+
+                        $isGenderMismatch = false;
+                        $mismatchNotice = '';
+                        if ($isLoggedIn && !empty($userGender)) {
+                            if ($targetGender === 'putra' && $userGender === 'P') {
+                                $isGenderMismatch = true;
+                                $mismatchNotice = 'Properti ini dikhususkan bagi penghuni PUTRA. Jenis kelamin akun Anda adalah PEREMPUAN. Demi kenyamanan dan kepatuhan syariat, Anda tidak dapat mengajukan sewa di properti ini.';
+                            } elseif ($targetGender === 'putri' && $userGender === 'L') {
+                                $isGenderMismatch = true;
+                                $mismatchNotice = 'Properti ini dikhususkan bagi penghuni PUTRI. Jenis kelamin akun Anda adalah LAKI-LAKI. Demi kenyamanan dan kepatuhan syariat, Anda tidak dapat mengajukan sewa di properti ini.';
+                            }
+                        }
+                    ?>
                     <?php if ($listing['unit_status'] === 'available'): ?>
-                        <a href="<?= base_url('/apply/' . $listing['id']) ?>" 
-                           class="btn btn-kosaja-primary w-100 py-3 fw-bold mb-2 shadow-sm">
-                            <i class="bi bi-calendar-check me-1"></i> Ajukan Sewa Kamar Ini
-                        </a>
+                        <?php if ($isGenderMismatch): ?>
+                            <button type="button" 
+                                    id="btnGenderMismatch"
+                                    class="btn btn-outline-danger w-100 py-3 fw-bold mb-2 shadow-sm">
+                                <i class="bi bi-slash-circle me-1"></i> Khusus <?= $targetGender === 'putra' ? 'Putra' : 'Putri' ?> (Tidak Sesuai Akun)
+                            </button>
+                            <div class="alert alert-danger py-2 px-3 small rounded-3 mb-2 d-flex align-items-center gap-2">
+                                <i class="bi bi-exclamation-octagon-fill text-danger flex-shrink-0"></i>
+                                <span>Akun Anda terdaftar sebagai <strong><?= $userGender === 'P' ? 'Perempuan' : 'Laki-Laki' ?></strong>. Sistem membatasi pengajuan hunian ini sesuai ketentuan syariat.</span>
+                            </div>
+                        <?php else: ?>
+                            <a href="<?= base_url('/apply/' . $listing['id']) ?>" 
+                               class="btn btn-kosaja-primary w-100 py-3 fw-bold mb-2 shadow-sm">
+                                <i class="bi bi-calendar-check me-1"></i> Ajukan Sewa Kamar Ini
+                            </a>
+                        <?php endif; ?>
                     <?php else: ?>
                         <button type="button" class="btn btn-secondary w-100 py-3 fw-bold mb-2 shadow-sm" disabled>
                             <i class="bi bi-x-circle me-1"></i> Kamar Tidak Tersedia
@@ -449,8 +478,34 @@
             });
         } else {
             navigator.clipboard.writeText(window.location.href);
-            alert('Tautan listing berhasil disalin ke clipboard!');
+            Swal.fire({
+                icon: 'success',
+                title: 'Tautan Disalin!',
+                text: 'Tautan listing berhasil disalin ke clipboard.',
+                timer: 2000,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end'
+            });
         }
     }
+
+    <?php if (!empty($isGenderMismatch)): ?>
+    document.getElementById('btnGenderMismatch')?.addEventListener('click', function() {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Kepatuhan Syariat Hunian',
+            html: <?= json_encode($mismatchNotice) ?> + '<br><br><span class="text-muted small">Silakan cari hunian alternatif yang sesuai dengan jenis kelamin akun Anda.</span>',
+            confirmButtonColor: '#0d9488',
+            confirmButtonText: 'Cari Hunian Khusus <?= $userGender === 'P' ? 'Putri' : 'Putra' ?>',
+            showCancelButton: true,
+            cancelButtonText: 'Tutup'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = '<?= base_url('/search?target_gender=' . ($userGender === 'P' ? 'putri' : 'putra')) ?>';
+            }
+        });
+    });
+    <?php endif; ?>
 </script>
 <?= $this->endSection() ?>

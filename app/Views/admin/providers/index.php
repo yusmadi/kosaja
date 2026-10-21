@@ -97,7 +97,7 @@
                         <th>Dokumen KTP</th>
                         <th>Rekening Bank</th>
                         <th>Inventaris</th>
-                        <th class="text-center" style="width: 200px;">Aksi Verifikasi</th>
+                        <th class="text-center" style="width: 200px;"><?= $isSuperAdmin ? 'Wewenang Verifikasi' : 'Aksi Verifikasi' ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -147,9 +147,26 @@
                                     <span class="badge badge-light border"><?= $p['total_units'] ?> Unit Kamar</span>
                                 </td>
                                 <td class="text-center">
-                                    <?php if (!empty($p['profile_id'])): ?>
+                                    <?php if ($isSuperAdmin): ?>
+                                        <!-- Super Admin: Oversight Only (No Direct KYC Verification) -->
+                                        <span class="badge badge-light border text-secondary font-weight-normal py-1 px-2" title="Wewenang operasional verifikasi berada pada Admin Daerah">
+                                            <i class="fas fa-user-shield text-warning mr-1"></i> Admin <?= esc($p['region_name'] ?? 'Daerah') ?>
+                                        </span>
+                                        <?php if (!empty($p['profile_id']) && $p['verification_status'] === 'verified'): ?>
+                                            <form action="<?= base_url('/admin/providers/suspend/' . $p['profile_id']) ?>" method="post" class="d-inline ml-1 form-suspend" data-provider-name="<?= esc($p['name']) ?>">
+                                                <?= csrf_field() ?>
+                                                <button type="submit" class="btn btn-xs btn-outline-dark" title="Suspend Global Mitra">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <!-- Admin Daerah: Full Operational KYC Verification -->
+                                        <?php 
+                                            $targetActionId = !empty($p['profile_id']) ? $p['profile_id'] : $p['id'];
+                                        ?>
                                         <?php if ($p['verification_status'] !== 'verified'): ?>
-                                            <form action="<?= base_url('/admin/providers/verify/' . $p['profile_id']) ?>" method="post" class="d-inline form-verify" data-provider-name="<?= esc($p['name']) ?>">
+                                            <form action="<?= base_url('/admin/providers/verify/' . $targetActionId) ?>" method="post" class="d-inline form-verify" data-provider-name="<?= esc($p['name']) ?>">
                                                 <?= csrf_field() ?>
                                                 <button type="submit" class="btn btn-xs btn-success font-weight-bold" title="Setujui Verifikasi">
                                                     <i class="fas fa-check mr-1"></i> Setujui
@@ -158,15 +175,15 @@
                                         <?php endif; ?>
 
                                         <?php if ($p['verification_status'] !== 'rejected'): ?>
-                                            <button type="button" class="btn btn-xs btn-outline-danger" data-toggle="modal" data-target="#rejectModal<?= $p['profile_id'] ?>" title="Tolak Pengajuan">
+                                            <button type="button" class="btn btn-xs btn-outline-danger" data-toggle="modal" data-target="#rejectModal<?= $targetActionId ?>" title="Tolak Pengajuan">
                                                 <i class="fas fa-times mr-1"></i> Tolak
                                             </button>
 
                                             <!-- Modal Tolak -->
-                                            <div class="modal fade" id="rejectModal<?= $p['profile_id'] ?>" tabindex="-1" role="dialog" aria-hidden="true">
+                                            <div class="modal fade" id="rejectModal<?= $targetActionId ?>" tabindex="-1" role="dialog" aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered" role="document">
                                                     <div class="modal-content text-left">
-                                                        <form action="<?= base_url('/admin/providers/reject/' . $p['profile_id']) ?>" method="post">
+                                                        <form action="<?= base_url('/admin/providers/reject/' . $targetActionId) ?>" method="post">
                                                             <?= csrf_field() ?>
                                                             <div class="modal-header bg-danger text-white">
                                                                 <h5 class="modal-title font-weight-bold"><i class="fas fa-exclamation-triangle mr-2"></i> Tolak Verifikasi Mitra</h5>
@@ -194,15 +211,13 @@
                                         <?php endif; ?>
 
                                         <?php if ($p['verification_status'] === 'verified'): ?>
-                                            <form action="<?= base_url('/admin/providers/suspend/' . $p['profile_id']) ?>" method="post" class="d-inline form-suspend" data-provider-name="<?= esc($p['name']) ?>">
+                                            <form action="<?= base_url('/admin/providers/suspend/' . $targetActionId) ?>" method="post" class="d-inline form-suspend" data-provider-name="<?= esc($p['name']) ?>">
                                                 <?= csrf_field() ?>
                                                 <button type="submit" class="btn btn-xs btn-outline-dark" title="Suspend Mitra">
                                                     <i class="fas fa-ban"></i>
                                                 </button>
                                             </form>
                                         <?php endif; ?>
-                                    <?php else: ?>
-                                        <span class="text-muted text-xs">Profil belum dibuat</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>

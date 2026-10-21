@@ -85,6 +85,7 @@
                                 <input type="hidden" name="amount" value="<?= $totalAmount ?>">
                                 <input type="hidden" name="payment_method" value="<?= esc($paymentMethod) ?>">
                                 <input type="hidden" name="outcome" value="SUCCESS">
+                                <input type="hidden" name="status" value="SUCCESS">
                                 <button type="submit" class="btn btn-success w-100 py-3 fw-bold shadow-sm">
                                     <i class="bi bi-check2-circle me-1"></i> Simulasikan Pembayaran BERHASIL (Success Settlement)
                                 </button>
@@ -96,6 +97,7 @@
                                 <input type="hidden" name="amount" value="<?= $totalAmount ?>">
                                 <input type="hidden" name="payment_method" value="<?= esc($paymentMethod) ?>">
                                 <input type="hidden" name="outcome" value="FAILED">
+                                <input type="hidden" name="status" value="FAILED">
                                 <button type="submit" class="btn btn-outline-danger w-100 py-2 small">
                                     <i class="bi bi-x-circle me-1"></i> Simulasikan Pembayaran GAGAL / EXPIRED
                                 </button>
