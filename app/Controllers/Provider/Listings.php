@@ -53,11 +53,14 @@ class Listings extends BaseController
             'inactive'       => count(array_filter($allListings, fn($l) => $l['publication_status'] === 'inactive')),
         ];
 
-        // Quota check (Free Tier Starter = 3 listings)
-        $maxFreeListings = 3;
+        // Dynamic Quota check from ProviderSubscriptionModel
+        $subscriptionModel = new \App\Models\ProviderSubscriptionModel();
+        $quota = $subscriptionModel->getEffectiveQuota($providerId);
+        $maxListings = (int) $quota['capacity_limit'];
         $totalListings = count($allListings);
-        $remainingListingQuota = max(0, $maxFreeListings - $totalListings);
-        $isQuotaFull = ($totalListings >= $maxFreeListings);
+        $remainingListingQuota = max(0, $maxListings - $totalListings);
+        $isQuotaFull = ($totalListings >= $maxListings);
+        $isExpired = ($quota['status'] === 'expired');
 
         return view('provider/listings/index', [
             'title'                 => 'Manajemen Listing Iklan — KosAja',
@@ -67,10 +70,12 @@ class Listings extends BaseController
             'unlistedUnits'         => $unlistedUnits,
             'counts'                => $counts,
             'statusFilter'          => $statusFilter,
-            'maxFreeListings'       => $maxFreeListings,
+            'maxFreeListings'       => $maxListings,
             'totalListings'         => $totalListings,
             'remainingListingQuota' => $remainingListingQuota,
             'isQuotaFull'           => $isQuotaFull,
+            'quota'                 => $quota,
+            'isExpired'             => $isExpired,
         ]);
     }
 
@@ -81,12 +86,18 @@ class Listings extends BaseController
     {
         $providerId = session()->get('user_id') ?? 3;
 
-        // Quota check enforcement (Free Tier Starter = 3 listings)
-        $maxFreeListings = 3;
+        $subscriptionModel = new \App\Models\ProviderSubscriptionModel();
+        $quota = $subscriptionModel->getEffectiveQuota($providerId);
+        $maxListings = (int) $quota['capacity_limit'];
+
+        if ($quota['status'] === 'expired') {
+            return redirect()->to('/provider/listings')->with('error', 'Masa aktif paket listing Anda telah berakhir. Silakan pilih paket di menu Paket & Langganan untuk membuat listing baru.');
+        }
+
         $allListings = $this->listingModel->getListingsByProvider($providerId);
         $totalListings = count($allListings);
-        if ($totalListings >= $maxFreeListings) {
-            return redirect()->to('/provider/listings')->with('warning', "Kapasitas kuota listing gratis ({$maxFreeListings} iklan) telah tercapai. Silakan kelola listing yang ada atau tingkatkan paket langganan Anda.");
+        if ($totalListings >= $maxListings) {
+            return redirect()->to('/provider/listings')->with('warning', "Kapasitas kuota listing Anda ({$maxListings} iklan) telah tercapai. Silakan upgrade paket di menu Paket & Langganan untuk menambah kuota iklan.");
         }
 
         $unlistedUnits = $this->unitModel->getUnitsWithoutListing($providerId);
@@ -111,7 +122,7 @@ class Listings extends BaseController
             'activeMenu'      => 'listings',
             'unlistedUnits'   => $unlistedUnits,
             'selectedUnit'    => $selectedUnit,
-            'maxFreeListings' => $maxFreeListings,
+            'maxFreeListings' => $maxListings,
             'totalListings'   => $totalListings,
         ]);
     }
@@ -123,11 +134,18 @@ class Listings extends BaseController
     {
         $providerId = session()->get('user_id') ?? 3;
 
-        // Quota check enforcement (Free Tier Starter = 3 listings)
-        $maxFreeListings = 3;
+        // Dynamic Quota check enforcement
+        $subscriptionModel = new \App\Models\ProviderSubscriptionModel();
+        $quota = $subscriptionModel->getEffectiveQuota($providerId);
+        $maxListings = (int) $quota['capacity_limit'];
+
+        if ($quota['status'] === 'expired') {
+            return redirect()->to('/provider/listings')->with('error', 'Gagal membuat listing iklan: Masa aktif paket Anda telah berakhir. Silakan perpanjang di menu Paket & Langganan.');
+        }
+
         $allListings = $this->listingModel->getListingsByProvider($providerId);
-        if (count($allListings) >= $maxFreeListings) {
-            return redirect()->to('/provider/listings')->with('error', "Gagal membuat listing iklan: Anda telah mencapai batas maksimal kuota gratis ({$maxFreeListings} iklan). Tingkatkan paket langganan untuk menambah kuota iklan.");
+        if (count($allListings) >= $maxListings) {
+            return redirect()->to('/provider/listings')->with('error', "Gagal membuat listing iklan: Anda telah mencapai batas maksimal kuota ({$maxListings} iklan). Tingkatkan paket di menu Paket & Langganan untuk menambah kuota iklan.");
         }
 
         $unitId = (int) $this->request->getPost('unit_id');
@@ -340,6 +358,22 @@ class Listings extends BaseController
 
         if (! $listing) {
             return redirect()->back()->with('error', 'Listing tidak ditemukan.');
+        }
+
+        // If toggling from inactive to published, verify quota
+        if ($listing['publication_status'] !== 'published') {
+            $subscriptionModel = new \App\Models\ProviderSubscriptionModel();
+            $quota = $subscriptionModel->getEffectiveQuota($providerId);
+
+            if ($quota['status'] === 'expired') {
+                return redirect()->back()->with('error', 'Tidak dapat mengaktifkan listing: Masa aktif paket Anda telah berakhir. Silakan pilih paket di menu Paket & Langganan.');
+            }
+
+            $allListings = $this->listingModel->getListingsByProvider($providerId);
+            $publishedCount = count(array_filter($allListings, fn($l) => $l['publication_status'] === 'published'));
+            if ($publishedCount >= (int) $quota['capacity_limit']) {
+                return redirect()->back()->with('error', "Tidak dapat mengaktifkan listing: Batas kuota listing aktif ({$quota['capacity_limit']}) telah penuh. Silakan upgrade paket Anda di menu Paket & Langganan.");
+            }
         }
 
         $newStatus = ($listing['publication_status'] === 'published') ? 'inactive' : 'published';

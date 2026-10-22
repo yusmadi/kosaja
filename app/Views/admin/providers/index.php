@@ -225,8 +225,13 @@
                     <?php else: ?>
                         <tr>
                             <td colspan="7" class="text-center py-4 text-muted">
-                                <i class="fas fa-folder-open fa-2x mb-2 d-block"></i>
-                                Tidak ada data penyedia dengan status yang dipilih.
+                                <i class="fas fa-folder-open fa-2x mb-2 d-block text-muted"></i>
+                                <div>Tidak ada data penyedia dengan status yang dipilih di wilayah <strong><?= esc($scopedLabel) ?></strong>.</div>
+                                <?php if (! $isSuperAdmin): ?>
+                                    <small class="d-block text-muted mt-1">
+                                        <i class="fas fa-info-circle text-teal mr-1"></i> Sebagai Admin Daerah, Anda berwenang memverifikasi mitra baru yang mendaftar di wilayah ini. Jika mitra mendaftar di kota/kabupaten lain, mitra tersebut otomatis masuk ke antrean Admin Daerah terkait atau Super Admin.
+                                    </small>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endif; ?>

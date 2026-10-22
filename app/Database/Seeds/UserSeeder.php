@@ -45,6 +45,7 @@ class UserSeeder extends Seeder
                 'whatsapp'   => '081234567892',
                 'gender'     => 'L',
                 'role'       => 'provider',
+                'region_id'  => 2,
                 'status'     => 'active',
                 'created_at' => $now,
                 'updated_at' => $now,

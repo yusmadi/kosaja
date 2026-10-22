@@ -90,6 +90,11 @@ class Webhook extends BaseController
             ]);
         }
 
+        // Handle Provider Subscription / Listing Fee payments (SUB-{providerId}-{planId}-{timestamp})
+        if (str_starts_with($orderId, 'SUB-')) {
+            return $this->handleSubscriptionPayment($parsed, $orderId);
+        }
+
         // Extract reservation ID from order_id format (KOS-{resId}-{timestamp})
         preg_match('/KOS-(\d+)-/i', $orderId, $matches);
         $resId = isset($matches[1]) ? (int) $matches[1] : (int) ($_GET['res_id'] ?? (method_exists($request, 'getGet') ? $request->getGet('res_id') : 0));
@@ -277,6 +282,114 @@ class Webhook extends BaseController
         return $response->setJSON([
             'success' => true,
             'message' => 'Webhook received with status: ' . $parsed['status'],
+        ]);
+    }
+
+    /**
+     * Handle Provider Subscription and Listing Fee payment webhooks
+     */
+    protected function handleSubscriptionPayment(array $parsed, string $orderId): ResponseInterface
+    {
+        $response = $this->response ?? service('response');
+        $invoiceModel = new \App\Models\ProviderInvoiceModel();
+        $paymentModel = new \App\Models\ProviderPaymentModel();
+        $subscriptionModel = new \App\Models\ProviderSubscriptionModel();
+        $planModel = new \App\Models\SubscriptionPlanModel();
+
+        $invoice = $invoiceModel->where('order_id', $orderId)->first();
+        if (! $invoice) {
+            return $response->setStatusCode(404)->setJSON([
+                'success' => false,
+                'message' => 'Provider invoice not found for order_id: ' . $orderId,
+            ]);
+        }
+
+        // Idempotency: if already marked paid, return success
+        if ($invoice['status'] === 'paid') {
+            return $response->setJSON([
+                'success' => true,
+                'message' => 'Invoice already processed and marked as paid.',
+                'invoice_id' => $invoice['id'],
+            ]);
+        }
+
+        // Handle FAILED or CANCELLED
+        if ($parsed['status'] === 'FAILED') {
+            $invoiceModel->update($invoice['id'], [
+                'status' => 'cancelled',
+            ]);
+
+            $this->auditModel->record(
+                (int) $invoice['provider_id'],
+                'PROVIDER_BILLING_PAYMENT_FAILED',
+                'provider_invoices',
+                (int) $invoice['id'],
+                ['status' => $invoice['status']],
+                ['status' => 'cancelled', 'trx_id' => $parsed['gateway_trx_id']],
+                'Pembayaran paket langganan provider gagal atau dibatalkan oleh gateway.'
+            );
+
+            return $response->setJSON([
+                'success' => true,
+                'message' => 'Provider payment failure processed.',
+                'status'  => 'FAILED',
+            ]);
+        }
+
+        // Handle SUCCESS (Settlement / Capture)
+        if ($parsed['status'] === 'SUCCESS') {
+            $plan = $planModel->find($invoice['plan_id']);
+
+            // 1. Activate or extend subscription
+            $activationResult = $subscriptionModel->activatePlan((int) $invoice['provider_id'], (int) $invoice['plan_id']);
+
+            // 2. Mark invoice as paid
+            $invoiceModel->update($invoice['id'], [
+                'status'          => 'paid',
+                'payment_method'  => $parsed['payment_method'] ?? 'midtrans',
+                'subscription_id' => $activationResult['subscription_id'],
+            ]);
+
+            // 3. Record provider payment
+            $paymentModel->insert([
+                'invoice_id'     => $invoice['id'],
+                'amount_paid'    => $parsed['amount'] > 0 ? $parsed['amount'] : $invoice['amount'],
+                'gateway_trx_id' => $parsed['gateway_trx_id'],
+                'payment_method' => $parsed['payment_method'] ?? 'midtrans',
+                'status'         => 'success',
+                'paid_at'        => date('Y-m-d H:i:s'),
+            ]);
+
+            // 4. Record audit log
+            $this->auditModel->record(
+                (int) $invoice['provider_id'],
+                'PROVIDER_SUBSCRIPTION_ACTIVATED',
+                'provider_subscriptions',
+                (int) $activationResult['subscription_id'],
+                null,
+                [
+                    'plan_id'        => $invoice['plan_id'],
+                    'plan_name'      => $plan['name'] ?? 'Paket Berbayar',
+                    'capacity_limit' => $activationResult['capacity_limit'],
+                    'start_date'     => $activationResult['start_date'],
+                    'end_date'       => $activationResult['end_date'],
+                    'invoice_id'     => $invoice['id'],
+                ],
+                'Paket langganan/listing fee ' . ($plan['name'] ?? '') . ' berhasil diaktifkan hingga ' . $activationResult['end_date'] . ' dengan kuota ' . $activationResult['capacity_limit'] . ' listing.'
+            );
+
+            return $response->setJSON([
+                'success'         => true,
+                'message'         => 'Provider subscription successfully activated.',
+                'subscription_id' => $activationResult['subscription_id'],
+                'invoice_id'      => $invoice['id'],
+                'status'          => 'SUCCESS',
+            ]);
+        }
+
+        return $response->setJSON([
+            'success' => true,
+            'message' => 'Subscription webhook status: ' . $parsed['status'],
         ]);
     }
 }

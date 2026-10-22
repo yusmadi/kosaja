@@ -159,6 +159,14 @@ class Auth extends BaseController
 
         $regionId = ($role === 'provider') ? (int) $this->request->getPost('region_id') : null;
 
+        if ($role === 'provider' && $regionId) {
+            $db = \Config\Database::connect();
+            $selectedRegion = $db->table('regions')->where('id', $regionId)->get()->getRowArray();
+            if (! $selectedRegion || $selectedRegion['level'] === 'province') {
+                return redirect()->back()->withInput()->with('error', 'Silakan pilih wilayah operasional pada tingkat Kabupaten atau Kota (bukan Provinsi).');
+            }
+        }
+
         $userData = [
             'name'       => $this->request->getPost('name'),
             'email'      => $this->request->getPost('email'),

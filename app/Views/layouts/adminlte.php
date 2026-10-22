@@ -412,6 +412,12 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a href="<?= base_url('/provider/subscription') ?>" class="nav-link <?= ($activeMenu ?? '') === 'subscription' ? 'active' : '' ?>">
+                                <i class="nav-icon fas fa-crown text-warning"></i>
+                                <p>Paket & Langganan</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a href="<?= base_url('/provider/verification') ?>" class="nav-link <?= ($activeMenu ?? '') === 'payout' ? 'active' : '' ?>">
                                 <i class="nav-icon fas fa-wallet"></i>
                                 <p>Settlement & Rekening</p>

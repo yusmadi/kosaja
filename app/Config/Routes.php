@@ -150,6 +150,13 @@ $routes->group('provider', ['filter' => 'role:provider,super_admin'], static fun
     // Contracts Management (Sprint 6)
     $routes->get('contracts', 'Provider\Contracts::index');
     $routes->get('contracts/(:num)', 'Provider\Contracts::show/$1');
+
+    // Subscription & Listing Fee Management (Modul Billing)
+    $routes->get('subscription', 'Provider\Subscription::index');
+    $routes->get('subscription/checkout/(:num)', 'Provider\Subscription::checkout/$1');
+    $routes->post('subscription/checkout/(:num)', 'Provider\Subscription::checkout/$1');
+    $routes->get('subscription/simulate/(:num)', 'Provider\Subscription::simulate/$1');
+    $routes->post('subscription/simulate-execute/(:num)', 'Provider\Subscription::executeSimulation/$1');
 });
 
 // Payment Gateway Webhook (Public POST endpoint)

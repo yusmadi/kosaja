@@ -58,6 +58,89 @@ class PaymentGatewayService
     }
 
     /**
+     * Create payment transaction for Provider Subscription / Listing Fee
+     *
+     * @param array $invoice
+     * @param array $plan
+     * @param array $provider
+     * @param string $paymentMethod
+     * @return array
+     */
+    public function createSubscriptionPaymentTransaction(array $invoice, array $plan, array $provider, string $paymentMethod = 'bank_transfer_va'): array
+    {
+        $orderId = $invoice['order_id'] ?? ('SUB-' . $invoice['id'] . '-' . date('ymdHis'));
+        $totalAmount = (float) $invoice['amount'];
+
+        if ($this->config->driver === 'midtrans' && !empty($this->config->serverKey) && !str_contains($this->config->serverKey, 'demo')) {
+            $snapEndpoint = $this->config->isProduction ? 'https://app.midtrans.com/snap/v1/transactions' : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
+            $payload = [
+                'transaction_details' => [
+                    'order_id'     => $orderId,
+                    'gross_amount' => (int) round($totalAmount),
+                ],
+                'item_details' => [
+                    [
+                        'id'       => 'PLAN-' . $plan['id'],
+                        'price'    => (int) round($totalAmount),
+                        'quantity' => 1,
+                        'name'     => substr('Paket ' . $plan['name'], 0, 40),
+                    ],
+                ],
+                'customer_details' => [
+                    'first_name' => $provider['name'] ?? 'Mitra KosAja',
+                    'email'      => $provider['email'] ?? 'mitra@kosaja.id',
+                    'phone'      => $provider['whatsapp'] ?? '08123456789',
+                ],
+            ];
+
+            $ch = curl_init($snapEndpoint);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'Accept: application/json',
+                'Authorization: Basic ' . base64_encode($this->config->serverKey . ':'),
+            ]);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            $json = json_decode($response, true);
+            if ($httpCode >= 200 && $httpCode < 300 && isset($json['token'])) {
+                return [
+                    'success'      => true,
+                    'driver'       => 'midtrans',
+                    'order_id'     => $orderId,
+                    'gross_amount' => $totalAmount,
+                    'snap_token'   => $json['token'],
+                    'redirect_url' => $json['redirect_url'],
+                ];
+            }
+        }
+
+        // Mock Sandbox Simulator Driver
+        $vaNumber = match($paymentMethod) {
+            'bsi_va' => '7123' . str_pad($invoice['id'], 6, '0', STR_PAD_LEFT) . rand(10, 99),
+            'bca_va' => '8077' . str_pad($invoice['id'], 6, '0', STR_PAD_LEFT) . rand(10, 99),
+            default  => '9988' . str_pad($invoice['id'], 6, '0', STR_PAD_LEFT) . rand(10, 99),
+        };
+
+        return [
+            'success'        => true,
+            'driver'         => 'mock',
+            'order_id'       => $orderId,
+            'payment_method' => $paymentMethod,
+            'gross_amount'   => $totalAmount,
+            'va_number'      => $vaNumber,
+            'snap_token'     => 'mock-sub-token-' . bin2hex(random_bytes(8)),
+            'redirect_url'   => base_url('/provider/subscription/simulate/' . $invoice['id']),
+            'message'        => 'Pembayaran paket langganan siap disimulasikan.',
+        ];
+    }
+
+
+    /**
      * Parse and validate incoming webhook notification payload
      *
      * @param array $payload

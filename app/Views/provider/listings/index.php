@@ -11,12 +11,16 @@
         </div>
         <div class="col-sm-6 text-sm-right mt-2 mt-sm-0">
             <span class="badge badge-light border mr-2 py-2 px-3">
-                <i class="fas fa-boxes-stacked text-primary mr-1"></i> Kuota Free: <strong><?= $totalListings ?? 0 ?> / <?= $maxFreeListings ?? 3 ?></strong>
+                <i class="fas fa-boxes-stacked text-teal mr-1"></i> Kuota: <strong><?= $totalListings ?? 0 ?> / <?= $maxFreeListings ?? 3 ?></strong> (<?= esc($quota['plan_name'] ?? 'Paket') ?>)
             </span>
-            <?php if (!empty($isQuotaFull)): ?>
-                <button class="btn btn-secondary btn-sm shadow-sm font-weight-bold" disabled title="Batas kuota 3 listing telah tercapai">
-                    <i class="fas fa-lock mr-1"></i> Kuota Penuh (<?= $maxFreeListings ?>/<?= $maxFreeListings ?>)
-                </button>
+            <?php if (!empty($isExpired)): ?>
+                <a href="<?= base_url('/provider/subscription') ?>" class="btn btn-danger btn-sm shadow-sm font-weight-bold">
+                    <i class="fas fa-exclamation-triangle mr-1"></i> Re-Aktivasi Paket
+                </a>
+            <?php elseif (!empty($isQuotaFull)): ?>
+                <a href="<?= base_url('/provider/subscription') ?>" class="btn btn-warning text-dark btn-sm shadow-sm font-weight-bold">
+                    <i class="fas fa-bolt mr-1"></i> Upgrade Kuota
+                </a>
             <?php else: ?>
                 <a href="<?= base_url('/provider/listings/create') ?>" class="btn btn-teal text-white btn-sm shadow-sm font-weight-bold">
                     <i class="fas fa-plus-circle mr-1"></i> Buat Listing Iklan Baru
@@ -54,15 +58,37 @@
     </div>
 <?php endif; ?>
 
-<?php if (!empty($isQuotaFull)): ?>
-    <div class="alert alert-info border-info shadow-sm mb-3 d-flex justify-content-between align-items-center">
-        <div>
-            <strong class="text-dark"><i class="fas fa-circle-info text-info mr-2"></i> Kapasitas Listing Gratis Telah Penuh (<?= $totalListings ?> / <?= $maxFreeListings ?> Iklan)</strong>
-            <p class="text-muted text-xs mb-0">Anda telah mencapai batas maksimal paket Starter/Free Tier (3 iklan). Untuk memasang iklan unit kamar lainnya, nonaktifkan/hapus draf iklan yang ada atau hubungi admin untuk upgrade paket langganan.</p>
+<?php if (!empty($isExpired)): ?>
+    <div class="alert alert-danger border-0 shadow-sm mb-3 d-flex justify-content-between align-items-center" style="background-color: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444 !important;">
+        <div class="mr-3">
+            <strong class="d-block mb-1 font-weight-bold" style="color: #7f1d1d;">
+                <i class="fas fa-ban mr-2" style="color: #dc2626;"></i>Masa Aktif Paket Berakhir
+            </strong>
+            <p class="mb-0 text-sm" style="color: #991b1b; line-height: 1.45;">
+                Masa aktif paket iklan Anda telah habis. Seluruh listing unit yang belum tersewa dinonaktifkan sementara. Silakan aktifkan paket langganan atau slot listing baru untuk melanjutkan penayangan iklan.
+            </p>
         </div>
-        <span class="badge badge-warning text-dark px-3 py-2 font-weight-bold">
-            <i class="fas fa-crown mr-1"></i> Paket Starter
-        </span>
+        <div class="flex-shrink-0">
+            <a href="<?= base_url('/provider/subscription') ?>" class="btn btn-danger btn-sm font-weight-bold shadow-sm">
+                <i class="fas fa-bolt mr-1"></i> Beli Paket Sekarang
+            </a>
+        </div>
+    </div>
+<?php elseif (!empty($isQuotaFull)): ?>
+    <div class="alert alert-warning border-0 shadow-sm mb-3 d-flex justify-content-between align-items-center" style="background-color: #fef3c7; color: #92400e; border-left: 4px solid #f59e0b !important;">
+        <div class="mr-3">
+            <strong class="d-block mb-1 font-weight-bold" style="color: #78350f;">
+                <i class="fas fa-exclamation-circle mr-2" style="color: #d97706;"></i>Kapasitas Kuota Listing Telah Penuh (<?= $totalListings ?> / <?= $maxFreeListings ?> Iklan)
+            </strong>
+            <p class="mb-0 text-sm" style="color: #92400e; line-height: 1.45;">
+                Anda telah mencapai batas maksimal paket <strong><?= esc($quota['plan_name'] ?? 'Aktif') ?></strong> (<?= $maxFreeListings ?> iklan). Untuk menambah iklan unit kamar lainnya, tingkatkan paket Anda ke kapasitas yang lebih besar.
+            </p>
+        </div>
+        <div class="flex-shrink-0">
+            <a href="<?= base_url('/provider/subscription') ?>" class="btn btn-warning text-dark btn-sm font-weight-bold shadow-sm">
+                <i class="fas fa-crown mr-1"></i> Upgrade Paket
+            </a>
+        </div>
     </div>
 <?php endif; ?>
 

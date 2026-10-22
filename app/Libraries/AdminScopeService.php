@@ -61,10 +61,24 @@ class AdminScopeService
             return [];
         }
 
-        $children = $this->db->table('regions')->where('parent_id', $regionId)->get()->getResultArray();
         $ids = [$regionId];
-        foreach ($children as $child) {
-            $ids[] = (int) $child['id'];
+        $toProcess = [$regionId];
+
+        // Recursively gather all children and sub-children (e.g. city -> operational areas)
+        while (! empty($toProcess)) {
+            $children = $this->db->table('regions')
+                ->whereIn('parent_id', $toProcess)
+                ->get()
+                ->getResultArray();
+
+            $toProcess = [];
+            foreach ($children as $c) {
+                $childId = (int) $c['id'];
+                if (! in_array($childId, $ids, true)) {
+                    $ids[] = $childId;
+                    $toProcess[] = $childId;
+                }
+            }
         }
 
         return $ids;
