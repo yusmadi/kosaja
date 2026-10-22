@@ -26,6 +26,10 @@
             background-color: #0d9488 !important;
             color: #ffffff !important;
         }
+        .sidebar-dark-teal .nav-sidebar>.nav-item>.nav-link.active i,
+        .sidebar-light-teal .nav-sidebar>.nav-item>.nav-link.active i {
+            color: #ffffff !important;
+        }
         .badge-role-admin {
             background-color: #dc2626;
             color: #fff;
@@ -413,7 +417,7 @@
                         </li>
                         <li class="nav-item">
                             <a href="<?= base_url('/provider/subscription') ?>" class="nav-link <?= ($activeMenu ?? '') === 'subscription' ? 'active' : '' ?>">
-                                <i class="nav-icon fas fa-crown text-warning"></i>
+                                <i class="nav-icon fas fa-crown"></i>
                                 <p>Paket & Langganan</p>
                             </a>
                         </li>
