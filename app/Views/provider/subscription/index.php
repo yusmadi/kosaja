@@ -483,7 +483,7 @@
         background-color: #0d9488;
         color: #ffffff;
     }
-    .nav-pills .nav-link {
+    #billingTabs .nav-link {
         color: #475569;
         background-color: #f1f5f9;
         border: 1px solid #e2e8f0;
@@ -491,11 +491,11 @@
         margin-right: 6px;
         transition: all 0.2s ease;
     }
-    .nav-pills .nav-link:hover {
+    #billingTabs .nav-link:hover {
         color: #0d9488;
         background-color: #e6fffa;
     }
-    .nav-pills .nav-link.active, .nav-pills .show > .nav-link {
+    #billingTabs .nav-link.active, #billingTabs .show > .nav-link {
         background-color: #0d9488 !important;
         border-color: #0d9488 !important;
         color: #ffffff !important;
