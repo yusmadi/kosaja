@@ -58,6 +58,12 @@
             background-color: #0d9488 !important;
             color: #ffffff !important;
         }
+        .modal {
+            z-index: 1060 !important;
+        }
+        .modal-backdrop {
+            z-index: 1050 !important;
+        }
     </style>
 </head>
 <body class="hold-transition sidebar-mini layout-fixed">
@@ -513,6 +519,9 @@
 window.openModalCustom = function(modalId) {
     var modalEl = document.getElementById(modalId);
     if (!modalEl) return;
+    if (modalEl.parentElement !== document.body) {
+        document.body.appendChild(modalEl);
+    }
     if (window.bootstrap && window.bootstrap.Modal) {
         try {
             var m = bootstrap.Modal.getOrCreateInstance(modalEl);
@@ -582,6 +591,16 @@ document.addEventListener('click', function(e) {
         if (modalEl && modalEl.id) {
             e.preventDefault();
             window.closeModalCustom(modalEl.id);
+        }
+    }
+
+    var tabBtn = e.target.closest('[data-toggle="pill"], [data-toggle="tab"]');
+    if (tabBtn && !tabBtn.hasAttribute('data-bs-toggle')) {
+        if (window.bootstrap && window.bootstrap.Tab) {
+            try {
+                e.preventDefault();
+                bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+            } catch(e) {}
         }
     }
 });

@@ -36,6 +36,13 @@ class Subscription extends BaseController
     {
         $providerId = session()->get('user_id') ?? 3;
 
+        // Auto-expire pending invoices that passed due_date
+        $this->invoiceModel->where('provider_id', $providerId)
+            ->where('status', 'pending')
+            ->where('due_date <', date('Y-m-d'))
+            ->set(['status' => 'expired'])
+            ->update();
+
         // 1. Quota & Status
         $quota = $this->subscriptionModel->getEffectiveQuota($providerId);
 
@@ -51,6 +58,8 @@ class Subscription extends BaseController
         // 4. Invoices History
         $invoices = $this->invoiceModel->getInvoicesByProvider($providerId);
 
+        $paymentConfig = config('PaymentConfig') ?? new \Config\PaymentConfig();
+
         return view('provider/subscription/index', [
             'title'             => 'Paket & Langganan — KosAja',
             'role'              => 'provider',
@@ -61,6 +70,7 @@ class Subscription extends BaseController
             'listingFeePlans'   => $listingFeePlans,
             'subscriptionPlans' => $subscriptionPlans,
             'invoices'          => $invoices,
+            'paymentConfig'     => $paymentConfig,
         ]);
     }
 
@@ -178,9 +188,64 @@ class Subscription extends BaseController
         $webhook->payment($payload);
 
         if ($action === 'success') {
-            return redirect()->to(base_url('/provider/subscription'))->with('success', 'Pembayaran berhasil disimulasikan! Kuota paket telah aktif.');
+            return redirect()->to(base_url('/provider/subscription'))->with('success', 'Pembayaran berhasil diproses! Kuota paket telah aktif.');
         }
 
-        return redirect()->to(base_url('/provider/subscription'))->with('error', 'Simulasi pembayaran dibatalkan/gagal.');
+        return redirect()->to(base_url('/provider/subscription'))->with('error', 'Pembayaran dibatalkan atau gagal.');
+    }
+
+    /**
+     * Cancel a pending or expired provider invoice
+     */
+    public function cancelInvoice(int $invoiceId)
+    {
+        $providerId = session()->get('user_id') ?? 3;
+        $invoice = $this->invoiceModel->find($invoiceId);
+
+        if (! $invoice || (int) $invoice['provider_id'] !== $providerId) {
+            return redirect()->to(base_url('/provider/subscription'))->with('error', 'Tagihan tidak ditemukan.');
+        }
+
+        if (! in_array($invoice['status'], ['pending', 'expired'])) {
+            return redirect()->to(base_url('/provider/subscription'))->with('error', 'Tagihan ini tidak dapat dibatalkan karena sudah diproses atau lunas.');
+        }
+
+        $this->invoiceModel->update($invoiceId, [
+            'status' => 'cancelled',
+        ]);
+
+        return redirect()->to(base_url('/provider/subscription'))->with('success', 'Tagihan ' . esc($invoice['invoice_number']) . ' berhasil dibatalkan.');
+    }
+
+    /**
+     * View/Print Invoice Receipt
+     */
+    public function invoiceReceipt(int $invoiceId)
+    {
+        $providerId = session()->get('user_id') ?? 3;
+        $invoice = $this->invoiceModel->find($invoiceId);
+
+        if (! $invoice || (int) $invoice['provider_id'] !== $providerId) {
+            return redirect()->to(base_url('/provider/subscription'))->with('error', 'Tagihan tidak ditemukan.');
+        }
+
+        $plan = $this->planModel->find($invoice['plan_id']);
+        $provider = $this->userModel->find($providerId) ?? [
+            'name'     => session()->get('name') ?? 'Mitra KosAja',
+            'email'    => session()->get('email') ?? 'mitra@kosaja.id',
+            'whatsapp' => '08123456789',
+        ];
+
+        $paymentModel = new \App\Models\ProviderPaymentModel();
+        $payments = $paymentModel->getByInvoiceId($invoiceId);
+        $payment = !empty($payments) ? $payments[0] : null;
+
+        return view('provider/subscription/invoice_print', [
+            'title'    => 'Kuitansi Invoice ' . $invoice['invoice_number'] . ' — KosAja',
+            'invoice'  => $invoice,
+            'plan'     => $plan,
+            'provider' => $provider,
+            'payment'  => $payment,
+        ]);
     }
 }

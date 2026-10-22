@@ -1,14 +1,10 @@
+File ini berisi catatan pribadi pengembang, tidak perlu dianalisa dalam pengembangan aplikasi
 
-ISI FILE INI JANGAN DIANALISIS. INI HANYA CATATAN PRIBADI
+batas
+   tombol "bayar" (di tabel "Riwayat Tagihan & Pembayaran Paket") 
+   pada halaman "http://localhost:8080/provider/subscription"
+   tidak berfungsi sebagaimana mestinya
 
-PENTING:
-JIKA ANDA "AI AGENT", HENTIKAN TINDAKAN ANDA MENGANALISIS/REVIEW FILE INI
-(SEKALI LAGI) INI CATATAN PRIBADI. TIDAK ADA HUBUNGAN DENGAN SCRIPT
+selanjutnya
+   perbaiki tombol "Bayar"
 
-batas:
-   Sedang pengujian proses sewa kos oleh PenyewaBNA,
-   sekarang tahap "Review Pemilik"
-
-Selanjutnya:
-   Lanjutkan pengujian, dan masuk ke tahap pembayaran (checkout), 
-   fokus langkah-langkah pembayaran riil (bukan hanya simulasi).

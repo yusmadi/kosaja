@@ -54,8 +54,9 @@ class ProviderInvoiceModel extends Model
      */
     public function getInvoicesByProvider(int $providerId): array
     {
-        return $this->select('provider_invoices.*, subscription_plans.name as plan_name, subscription_plans.type as plan_type, subscription_plans.billing_cycle, subscription_plans.duration_days, subscription_plans.listing_capacity')
+        return $this->select('provider_invoices.*, subscription_plans.name as plan_name, subscription_plans.type as plan_type, subscription_plans.billing_cycle, subscription_plans.duration_days, subscription_plans.listing_capacity, provider_payments.gateway_trx_id, provider_payments.paid_at')
             ->join('subscription_plans', 'subscription_plans.id = provider_invoices.plan_id')
+            ->join('provider_payments', 'provider_payments.invoice_id = provider_invoices.id', 'left')
             ->where('provider_invoices.provider_id', $providerId)
             ->orderBy('provider_invoices.id', 'DESC')
             ->findAll();

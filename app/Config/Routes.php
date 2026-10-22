@@ -157,6 +157,8 @@ $routes->group('provider', ['filter' => 'role:provider,super_admin'], static fun
     $routes->post('subscription/checkout/(:num)', 'Provider\Subscription::checkout/$1');
     $routes->get('subscription/simulate/(:num)', 'Provider\Subscription::simulate/$1');
     $routes->post('subscription/simulate-execute/(:num)', 'Provider\Subscription::executeSimulation/$1');
+    $routes->post('subscription/cancel/(:num)', 'Provider\Subscription::cancelInvoice/$1');
+    $routes->get('subscription/invoice/(:num)', 'Provider\Subscription::invoiceReceipt/$1');
 });
 
 // Payment Gateway Webhook (Public POST endpoint)
