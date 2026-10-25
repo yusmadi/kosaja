@@ -86,6 +86,148 @@
                     </div>
                 </div>
 
+<?php
+$rentalConfig = [
+    'monthly' => [
+        'key'        => 'monthly',
+        'label'      => 'Sewa Bulanan',
+        'price'      => !empty($listing['price_monthly']) ? (float)$listing['price_monthly'] : 0,
+        'unit'       => '/ bulan',
+        'durations'  => [
+            ['value' => 1, 'label' => '1 Bulan'],
+            ['value' => 2, 'label' => '2 Bulan'],
+            ['value' => 3, 'label' => '3 Bulan'],
+            ['value' => 4, 'label' => '4 Bulan'],
+            ['value' => 5, 'label' => '5 Bulan'],
+        ],
+        'schedules'  => [
+            [
+                'value' => 'monthly',
+                'id'    => 'sched_monthly',
+                'label' => 'Bayar Bulanan (Per Bulan)',
+                'desc'  => 'Tagihan sewa diterbitkan rutin setiap bulan.',
+            ],
+            [
+                'value' => 'full_upfront',
+                'id'    => 'sched_full',
+                'label' => 'Lunas di Awal (Full Upfront)',
+                'desc'  => 'Satu kali pembayaran untuk seluruh durasi sewa yang dipilih.',
+            ],
+        ],
+    ],
+    'six_monthly' => [
+        'key'        => 'six_monthly',
+        'label'      => 'Sewa Enam Bulan',
+        'price'      => !empty($listing['price_six_monthly']) ? (float)$listing['price_six_monthly'] : 0,
+        'unit'       => '/ 6 bulan',
+        'durations'  => [
+            ['value' => 6, 'label' => '6 Bulan'],
+        ],
+        'schedules'  => [
+            [
+                'value' => 'full_upfront',
+                'id'    => 'sched_full',
+                'label' => 'Lunas di Awal (Full Upfront)',
+                'desc'  => 'Satu kali pembayaran lunas di awal untuk masa sewa 6 bulan.',
+            ],
+        ],
+    ],
+    'yearly' => [
+        'key'        => 'yearly',
+        'label'      => 'Sewa Tahunan',
+        'price'      => !empty($listing['price_yearly']) ? (float)$listing['price_yearly'] : 0,
+        'unit'       => '/ tahun',
+        'durations'  => [
+            ['value' => 12, 'label' => '1 Tahun'],
+        ],
+        'schedules'  => [
+            [
+                'value' => 'full_upfront',
+                'id'    => 'sched_full',
+                'label' => 'Lunas di Awal (Full Upfront)',
+                'desc'  => 'Satu kali pembayaran lunas di awal untuk masa sewa 1 tahun penuh.',
+            ],
+        ],
+    ],
+];
+?>
+
+<style>
+.schedule-radio-box {
+    cursor: pointer;
+    background-color: #ffffff;
+    transition: all 0.2s ease-in-out;
+}
+.schedule-radio-box:hover {
+    border-color: #0d9488 !important;
+    background-color: #f0fdfa;
+}
+.schedule-radio-box.active {
+    border-color: #0d9488 !important;
+    background-color: #f0fdfa;
+    box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.25);
+}
+
+/* Custom Rent Type Package Selector */
+.rent-type-card {
+    background-color: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    color: #1e293b;
+    border-radius: 0.5rem;
+    padding: 0.6rem 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: inline-block;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.rent-type-card .rent-type-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #1e293b;
+    transition: color 0.2s ease-in-out;
+}
+
+.rent-type-card .rent-type-price {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-top: 2px;
+    transition: color 0.2s ease-in-out;
+}
+
+/* Hover state: Soft mint/teal tint with crisp teal border and dark teal text */
+.rent-type-card:hover {
+    background-color: #f0fdfa !important;
+    border-color: #0d9488 !important;
+    box-shadow: 0 3px 8px rgba(13, 148, 136, 0.18);
+    transform: translateY(-1px);
+}
+
+.rent-type-card:hover .rent-type-title {
+    color: #0f766e !important;
+}
+
+.rent-type-card:hover .rent-type-price {
+    color: #0d9488 !important;
+}
+
+/* Checked/Active state: Solid primary teal with crisp white text */
+.btn-check:checked + .rent-type-card {
+    background-color: #0d9488 !important;
+    border-color: #0d9488 !important;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3) !important;
+    transform: translateY(-1px);
+}
+
+.btn-check:checked + .rent-type-card .rent-type-title {
+    color: #ffffff !important;
+}
+
+.btn-check:checked + .rent-type-card .rent-type-price {
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+</style>
+
                 <!-- Section 2: Jadwal & Durasi Sewa -->
                 <div class="card border-0 shadow-sm rounded-3 mb-4">
                     <div class="card-header bg-white py-3 border-0">
@@ -95,6 +237,41 @@
                         </div>
                     </div>
                     <div class="card-body pt-0">
+                        <!-- Jenis / Tipe Listing Banner or Selector -->
+                        <?php if (count($availableTypes) > 1): ?>
+                            <div class="p-3 bg-light rounded-3 border mb-3">
+                                <label class="form-label small fw-semibold text-dark mb-2 d-block">
+                                    <i class="bi bi-tag-fill text-teal me-1"></i>Pilih Jenis / Paket Sewa: <span class="text-danger">*</span>
+                                </label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <?php foreach ($availableTypes as $typeKey => $t): ?>
+                                        <div class="form-check form-check-inline p-0 m-0">
+                                            <input class="btn-check" type="radio" name="rent_type" id="rent_type_<?= $typeKey ?>" value="<?= $typeKey ?>" <?= ($selectedType === $typeKey) ? 'checked' : '' ?> onchange="updateRentType(this.value)">
+                                            <label class="rent-type-card text-start" for="rent_type_<?= $typeKey ?>">
+                                                <div class="rent-type-title"><?= esc($t['label']) ?></div>
+                                                <div class="rent-type-price">Rp <?= number_format($t['price'], 0, ',', '.') ?> <?= $t['unit'] ?></div>
+                                            </label>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <input type="hidden" name="rent_type" id="rent_type" value="<?= esc($selectedType) ?>">
+                            <div class="p-3 rounded-3 border mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background-color: #f0fdfa; border-color: #99f6e4 !important;">
+                                <div>
+                                    <span class="badge bg-teal text-white px-3 py-2 fs-6 mb-1">
+                                        <i class="bi bi-tag-fill me-1"></i>Jenis Listing: <?= esc($availableTypes[$selectedType]['label'] ?? 'Sewa Hunian') ?>
+                                    </span>
+                                    <div class="text-muted small mt-1">Durasi dan skema pembayaran disesuaikan dengan jenis listing ini.</div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="text-muted small d-block">Tarif Sewa:</span>
+                                    <strong class="text-teal fs-5">Rp <?= number_format($availableTypes[$selectedType]['price'] ?? 0, 0, ',', '.') ?></strong>
+                                    <span class="text-muted small"><?= esc($availableTypes[$selectedType]['unit'] ?? '') ?></span>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
                         <div class="row g-3">
                             <!-- Start Date -->
                             <div class="col-md-6">
@@ -112,55 +289,17 @@
                             <!-- Duration Months -->
                             <div class="col-md-6">
                                 <label for="duration_months" class="form-label small fw-semibold text-dark">Lama Durasi Sewa <span class="text-danger">*</span></label>
-                                <select class="form-select" id="duration_months" name="duration_months" onchange="calculateRentalPrice()" required>
-                                    <option value="1" <?= old('duration_months') == '1' ? 'selected' : '' ?>>1 Bulan</option>
-                                    <option value="3" <?= old('duration_months') == '3' ? 'selected' : '' ?>>3 Bulan</option>
-                                    <option value="6" <?= old('duration_months') == '6' ? 'selected' : '' ?>>6 Bulan</option>
-                                    <option value="12" <?= old('duration_months', '12') == '12' ? 'selected' : '' ?>>1 Tahun (12 Bulan)</option>
-                                    <option value="24" <?= old('duration_months') == '24' ? 'selected' : '' ?>>2 Tahun (24 Bulan)</option>
+                                <select class="form-select" id="duration_months" name="duration_months" onchange="onDurationChanged()" required>
+                                    <!-- Populated dynamically by updateRentType -->
                                 </select>
+                                <div class="form-text small" id="durationHelpText">Pilihan durasi sesuai dengan jenis listing.</div>
                             </div>
 
                             <!-- Payment Schedule -->
                             <div class="col-12">
                                 <label class="form-label small fw-semibold text-dark">Skema Jadwal Pembayaran <span class="text-danger">*</span></label>
-                                <div class="row g-2">
-                                    <div class="col-md-6">
-                                        <div class="form-check p-3 border rounded-3 h-100 schedule-radio-box">
-                                            <input class="form-check-input ms-0 me-2" type="radio" name="payment_schedule" id="sched_monthly" value="monthly" onchange="calculateRentalPrice()" <?= old('payment_schedule', 'monthly') === 'monthly' ? 'checked' : '' ?>>
-                                            <label class="form-check-label fw-semibold text-dark" for="sched_monthly">
-                                                Bayar Bulanan (Per Bulan)
-                                                <div class="text-muted small fw-normal">Tagihan diterbitkan rutin setiap tanggal jatuh tempo sewa.</div>
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-check p-3 border rounded-3 h-100 schedule-radio-box">
-                                            <input class="form-check-input ms-0 me-2" type="radio" name="payment_schedule" id="sched_3monthly" value="3_monthly" onchange="calculateRentalPrice()" <?= old('payment_schedule') === '3_monthly' ? 'checked' : '' ?>>
-                                            <label class="form-check-label fw-semibold text-dark" for="sched_3monthly">
-                                                Termin Per 3 Bulan
-                                                <div class="text-muted small fw-normal">Pembayaran sewa per kuartal (3 bulan sekali).</div>
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-check p-3 border rounded-3 h-100 schedule-radio-box">
-                                            <input class="form-check-input ms-0 me-2" type="radio" name="payment_schedule" id="sched_yearly" value="yearly" onchange="calculateRentalPrice()" <?= old('payment_schedule') === 'yearly' ? 'checked' : '' ?>>
-                                            <label class="form-check-label fw-semibold text-dark" for="sched_yearly">
-                                                Tahunan (Per 1 Tahun)
-                                                <div class="text-muted small fw-normal">Tarif tahunan hemat untuk masa kontrak panjang.</div>
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-check p-3 border rounded-3 h-100 schedule-radio-box">
-                                            <input class="form-check-input ms-0 me-2" type="radio" name="payment_schedule" id="sched_full" value="full_upfront" onchange="calculateRentalPrice()" <?= old('payment_schedule') === 'full_upfront' ? 'checked' : '' ?>>
-                                            <label class="form-check-label fw-semibold text-dark" for="sched_full">
-                                                Lunas di Awal (Full Upfront)
-                                                <div class="text-muted small fw-normal">Satu kali pembayaran untuk seluruh durasi sewa yang dipilih.</div>
-                                            </label>
-                                        </div>
-                                    </div>
+                                <div class="row g-2" id="payment_schedule_container">
+                                    <!-- Populated dynamically by updateRentType -->
                                 </div>
                             </div>
                         </div>
@@ -249,37 +388,46 @@
                         <h3 class="h6 fw-bold mb-0"><i class="bi bi-receipt me-2"></i>Ringkasan Estimasi Biaya</h3>
                     </div>
                     <div class="card-body p-4">
-                        <div class="d-flex justify-content-between mb-2 small">
-                            <span class="text-muted">Tarif Sewa Kamar:</span>
-                            <span class="fw-semibold">Rp <?= number_format($listing['price_monthly'], 0, ',', '.') ?> / bln</span>
+                        <div class="mb-3 pb-2 border-bottom">
+                            <span class="text-muted small text-uppercase fw-semibold d-block mb-1">Tarif Unit Listing</span>
+                            <?php if (!empty($listing['price_monthly']) && (float)$listing['price_monthly'] > 0): ?>
+                                <div class="d-flex justify-content-between mb-1 small">
+                                    <span class="text-muted">Tarif Sewa Bulanan:</span>
+                                    <span class="fw-semibold">Rp <?= number_format($listing['price_monthly'], 0, ',', '.') ?> / bln</span>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (!empty($listing['price_six_monthly']) && (float)$listing['price_six_monthly'] > 0): ?>
+                                <div class="d-flex justify-content-between mb-1 small">
+                                    <span class="text-muted">Tarif Sewa 6 Bulan:</span>
+                                    <span class="fw-semibold">Rp <?= number_format($listing['price_six_monthly'], 0, ',', '.') ?> / 6 bln</span>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (!empty($listing['price_yearly']) && (float)$listing['price_yearly'] > 0): ?>
+                                <div class="d-flex justify-content-between mb-1 small">
+                                    <span class="text-muted">Tarif Sewa Tahunan:</span>
+                                    <span class="fw-semibold">Rp <?= number_format($listing['price_yearly'], 0, ',', '.') ?> / thn</span>
+                                </div>
+                            <?php endif; ?>
                         </div>
-                        <?php if (!empty($listing['price_six_monthly'])): ?>
-                            <div class="d-flex justify-content-between mb-2 small">
-                                <span class="text-muted">Tarif 6 Bulan:</span>
-                                <span class="fw-semibold">Rp <?= number_format($listing['price_six_monthly'], 0, ',', '.') ?> / 6 bln</span>
-                            </div>
-                        <?php endif; ?>
-                        <?php if (!empty($listing['price_yearly'])): ?>
-                            <div class="d-flex justify-content-between mb-2 small">
-                                <span class="text-muted">Tarif Tahunan:</span>
-                                <span class="fw-semibold">Rp <?= number_format($listing['price_yearly'], 0, ',', '.') ?> / thn</span>
-                            </div>
-                        <?php endif; ?>
 
                         <div class="d-flex justify-content-between mb-2 small">
+                            <span class="text-muted">Jenis Sewa:</span>
+                            <span class="fw-bold text-teal" id="summaryRentType"><?= esc($availableTypes[$selectedType]['label'] ?? 'Sewa Hunian') ?></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 small">
                             <span class="text-muted">Rencana Durasi:</span>
-                            <span class="fw-bold text-dark" id="summaryDuration">1 Bulan</span>
+                            <span class="fw-bold text-dark" id="summaryDuration">1 Tahun</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2 small">
                             <span class="text-muted">Skema Pembayaran:</span>
-                            <span class="fw-bold text-dark" id="summarySchedule">Bulanan</span>
+                            <span class="fw-bold text-dark" id="summarySchedule">Tahunan</span>
                         </div>
 
                         <hr class="my-3">
 
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="text-muted small">Biaya Sewa Termin Awal:</span>
-                            <strong class="text-teal fs-5" id="summaryRentalAmount">Rp <?= number_format($listing['price_monthly'], 0, ',', '.') ?></strong>
+                            <strong class="text-teal fs-5" id="summaryRentalAmount">Rp 0</strong>
                         </div>
 
                         <div class="d-flex justify-content-between align-items-center mb-2 small">
@@ -298,7 +446,7 @@
                                 <small class="text-muted" style="font-size: 0.72rem;">(Saat Checkout Disetujui)</small>
                             </div>
                             <strong class="h4 fw-bold text-dark mb-0" id="summaryTotalAmount">
-                                Rp <?= number_format($listing['price_monthly'] + $reservationConfig->gatewayFee, 0, ',', '.') ?>
+                                Rp 0
                             </strong>
                         </div>
 
@@ -319,13 +467,118 @@
 </div>
 
 <script>
-    const priceMonthly     = <?= (float) $listing['price_monthly'] ?>;
-    const priceSixMonthly  = <?= !empty($listing['price_six_monthly']) ? (float) $listing['price_six_monthly'] : 'null' ?>;
-    const priceYearly      = <?= !empty($listing['price_yearly']) ? (float) $listing['price_yearly'] : ((float) $listing['price_monthly'] * 12) ?>;
-    const gatewayFee       = <?= (float) $reservationConfig->gatewayFee ?>;
+    const rentalConfig  = <?= json_encode($rentalConfig) ?>;
+    const gatewayFee    = <?= (float) $reservationConfig->gatewayFee ?>;
+    let currentRentType = <?= json_encode($selectedType) ?>;
+    let oldDuration     = <?= (int) old('duration_months', 0) ?>;
+    let oldSchedule     = <?= json_encode(old('payment_schedule', '')) ?>;
 
     function formatRupiah(number) {
         return 'Rp ' + Math.round(number).toLocaleString('id-ID');
+    }
+
+    function updateRentType(newType) {
+        if (!rentalConfig[newType]) return;
+        currentRentType = newType;
+        renderDurationSelect();
+        renderPaymentSchedule();
+        calculateRentalPrice();
+    }
+
+    function renderDurationSelect() {
+        const durationSelect = document.getElementById('duration_months');
+        const config = rentalConfig[currentRentType];
+        if (!config) return;
+
+        durationSelect.innerHTML = '';
+        let matchedOld = false;
+
+        config.durations.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.label;
+            if (oldDuration && oldDuration == opt.value) {
+                option.selected = true;
+                matchedOld = true;
+            }
+            durationSelect.appendChild(option);
+        });
+
+        if (!matchedOld && config.durations.length > 0) {
+            durationSelect.value = config.durations[0].value;
+        }
+
+        const helpText = document.getElementById('durationHelpText');
+        if (helpText) {
+            if (currentRentType === 'monthly') {
+                helpText.textContent = 'Tersedia pilihan sewa 1 hingga 5 bulan.';
+            } else if (currentRentType === 'six_monthly') {
+                helpText.textContent = 'Khusus paket sewa 6 bulan (satu semester).';
+            } else if (currentRentType === 'yearly') {
+                helpText.textContent = 'Khusus paket sewa 1 tahun.';
+            }
+        }
+    }
+
+    function renderPaymentSchedule() {
+        const container = document.getElementById('payment_schedule_container');
+        const config = rentalConfig[currentRentType];
+        if (!config) return;
+
+        container.innerHTML = '';
+        const colClass = config.schedules.length === 1 ? 'col-12' : 'col-md-6';
+        let matchedOld = false;
+
+        config.schedules.forEach((item, index) => {
+            const col = document.createElement('div');
+            col.className = colClass;
+
+            const isChecked = (oldSchedule && oldSchedule === item.value) || (!oldSchedule && index === 0);
+            if (isChecked) matchedOld = true;
+
+            col.innerHTML = `
+                <div class="form-check p-3 border rounded-3 h-100 schedule-radio-box ${isChecked ? 'active' : ''}" onclick="selectScheduleRadio('${item.id}')">
+                    <input class="form-check-input ms-0 me-2" type="radio" name="payment_schedule" id="${item.id}" value="${item.value}" onchange="onScheduleChanged()" ${isChecked ? 'checked' : ''} required>
+                    <label class="form-check-label fw-semibold text-dark" for="${item.id}">
+                        ${item.label}
+                        <div class="text-muted small fw-normal">${item.desc}</div>
+                    </label>
+                </div>
+            `;
+            container.appendChild(col);
+        });
+
+        if (!matchedOld && config.schedules.length > 0) {
+            const firstRadio = document.getElementById(config.schedules[0].id);
+            if (firstRadio) {
+                firstRadio.checked = true;
+                firstRadio.closest('.schedule-radio-box')?.classList.add('active');
+            }
+        }
+    }
+
+    function selectScheduleRadio(id) {
+        const radio = document.getElementById(id);
+        if (radio) {
+            radio.checked = true;
+            onScheduleChanged();
+        }
+    }
+
+    function onScheduleChanged() {
+        document.querySelectorAll('.schedule-radio-box').forEach(box => {
+            const input = box.querySelector('input[type="radio"]');
+            if (input && input.checked) {
+                box.classList.add('active');
+            } else {
+                box.classList.remove('active');
+            }
+        });
+        calculateRentalPrice();
+    }
+
+    function onDurationChanged() {
+        calculateRentalPrice();
     }
 
     function calculateRentalPrice() {
@@ -333,44 +586,50 @@
         const duration = parseInt(durationSelect.value) || 1;
 
         const scheduleRadio = document.querySelector('input[name="payment_schedule"]:checked');
-        const schedule = scheduleRadio ? scheduleRadio.value : 'monthly';
+        const schedule = scheduleRadio ? scheduleRadio.value : '';
 
-        let rentalAmount = priceMonthly;
-        let scheduleLabel = 'Bulanan';
+        const config = rentalConfig[currentRentType];
+        if (!config) return;
 
-        if (schedule === 'monthly') {
-            rentalAmount = priceMonthly;
-            scheduleLabel = 'Per Bulan';
-        } else if (schedule === '3_monthly') {
-            rentalAmount = priceMonthly * Math.min(3, duration);
-            scheduleLabel = 'Per 3 Bulan';
-        } else if (schedule === '6_monthly') {
-            rentalAmount = priceSixMonthly ? priceSixMonthly : (priceMonthly * Math.min(6, duration));
-            scheduleLabel = 'Per 6 Bulan';
-        } else if (schedule === 'yearly') {
-            rentalAmount = (duration >= 12) ? priceYearly : (priceMonthly * 12);
-            scheduleLabel = 'Tahunan';
-        } else if (schedule === 'full_upfront') {
-            if (duration >= 12) {
-                const years = Math.floor(duration / 12);
-                const remMonths = duration % 12;
-                rentalAmount = (priceYearly * years) + (priceMonthly * remMonths);
-            } else {
-                rentalAmount = priceMonthly * duration;
+        let rentalAmount = 0;
+        let scheduleLabel = '';
+        let durationText = duration + ' Bulan';
+
+        if (currentRentType === 'yearly') {
+            durationText = '1 Tahun';
+            rentalAmount = config.price;
+            scheduleLabel = 'Lunas di Awal (Full Upfront)';
+        } else if (currentRentType === 'six_monthly') {
+            durationText = '6 Bulan';
+            rentalAmount = config.price;
+            scheduleLabel = 'Lunas di Awal (Full Upfront)';
+        } else { // monthly
+            durationText = duration + ' Bulan';
+            if (schedule === 'monthly') {
+                rentalAmount = config.price;
+                scheduleLabel = 'Bayar Bulanan (Per Bulan)';
+            } else { // full_upfront
+                rentalAmount = config.price * duration;
+                scheduleLabel = 'Lunas di Awal (' + duration + ' Bulan)';
             }
-            scheduleLabel = 'Lunas di Awal (' + duration + ' Bulan)';
         }
 
         const totalAmount = rentalAmount + gatewayFee;
 
         // Update summary display
-        document.getElementById('summaryDuration').textContent = duration + ' Bulan';
+        const rentTypeElem = document.getElementById('summaryRentType');
+        if (rentTypeElem) {
+            rentTypeElem.textContent = config.label;
+        }
+        document.getElementById('summaryDuration').textContent = durationText;
         document.getElementById('summarySchedule').textContent = scheduleLabel;
         document.getElementById('summaryRentalAmount').textContent = formatRupiah(rentalAmount);
         document.getElementById('summaryTotalAmount').textContent = formatRupiah(totalAmount);
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        renderDurationSelect();
+        renderPaymentSchedule();
         calculateRentalPrice();
     });
 </script>

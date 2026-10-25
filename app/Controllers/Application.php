@@ -90,11 +90,55 @@ class Application extends BaseController
             return redirect()->to(base_url('/listing/' . $listingId))->with('error', 'SISTEM MENOLAK OTOMATIS: Properti ini dikhususkan bagi penghuni PUTRI. Jenis kelamin akun Anda adalah LAKI-LAKI. Demi kenyamanan dan kepatuhan syariat, Anda tidak dapat mengajukan sewa di properti ini.');
         }
 
+        // 6. Determine available rental types based on listing pricing
+        $availableTypes = [];
+        if (!empty($listing['price_monthly']) && (float)$listing['price_monthly'] > 0) {
+            $availableTypes['monthly'] = [
+                'key'   => 'monthly',
+                'label' => 'Sewa Bulanan',
+                'price' => (float)$listing['price_monthly'],
+                'unit'  => '/ bulan',
+            ];
+        }
+        if (!empty($listing['price_six_monthly']) && (float)$listing['price_six_monthly'] > 0) {
+            $availableTypes['six_monthly'] = [
+                'key'   => 'six_monthly',
+                'label' => 'Sewa Enam Bulan',
+                'price' => (float)$listing['price_six_monthly'],
+                'unit'  => '/ 6 bulan',
+            ];
+        }
+        if (!empty($listing['price_yearly']) && (float)$listing['price_yearly'] > 0) {
+            $availableTypes['yearly'] = [
+                'key'   => 'yearly',
+                'label' => 'Sewa Tahunan',
+                'price' => (float)$listing['price_yearly'],
+                'unit'  => '/ tahun',
+            ];
+        }
+
+        if (empty($availableTypes)) {
+            $availableTypes['monthly'] = [
+                'key'   => 'monthly',
+                'label' => 'Sewa Bulanan',
+                'price' => (float)($listing['price_monthly'] ?? 0),
+                'unit'  => '/ bulan',
+            ];
+        }
+
+        $defaultType = array_key_first($availableTypes);
+        $selectedType = (!is_cli() && method_exists(service('request'), 'getOldInput')) ? old('rent_type', $defaultType) : $defaultType;
+        if (! isset($availableTypes[$selectedType])) {
+            $selectedType = $defaultType;
+        }
+
         return view('tenant/applications/create', [
             'title'             => 'Form Pengajuan Sewa — ' . esc($listing['title']),
             'listing'           => $listing,
             'user'              => $user,
             'reservationConfig' => $this->reservationConfig,
+            'availableTypes'    => $availableTypes,
+            'selectedType'      => $selectedType,
         ]);
     }
 
@@ -134,8 +178,8 @@ class Application extends BaseController
         // Validation rules
         $rules = [
             'start_date'       => 'required|valid_date',
-            'duration_months'  => 'required|integer|greater_than_equal_to[1]|less_than_equal_to[36]',
-            'payment_schedule' => 'required|in_list[monthly,3_monthly,6_monthly,yearly,full_upfront]',
+            'duration_months'  => 'required|in_list[1,2,3,4,5,6,12]',
+            'payment_schedule' => 'required|in_list[monthly,yearly,full_upfront]',
             'syariat_consent'  => 'required',
         ];
 
@@ -150,8 +194,8 @@ class Application extends BaseController
                 'valid_date' => 'Format tanggal mulai sewa tidak valid.',
             ],
             'duration_months' => [
-                'required'              => 'Durasi sewa wajib dipilih.',
-                'greater_than_equal_to' => 'Durasi sewa minimal 1 bulan.',
+                'required' => 'Durasi sewa wajib dipilih.',
+                'in_list'  => 'Pilihan durasi sewa tidak valid.',
             ],
             'payment_schedule' => [
                 'required' => 'Skema pembayaran sewa wajib dipilih.',
@@ -180,19 +224,56 @@ class Application extends BaseController
             return redirect()->back()->withInput()->with('error', 'Tanggal mulai sewa tidak boleh di masa lampau.');
         }
 
-        // Calculate rental amount for the first payment schedule
-        $monthlyPrice    = (float) $listing['price_monthly'];
-        $sixMonthlyPrice = !empty($listing['price_six_monthly']) ? (float) $listing['price_six_monthly'] : ($monthlyPrice * min(6, $durationMonths));
+        // Determine available types
+        $hasMonthly    = !empty($listing['price_monthly']) && (float)$listing['price_monthly'] > 0;
+        $hasSixMonthly = !empty($listing['price_six_monthly']) && (float)$listing['price_six_monthly'] > 0;
+        $hasYearly     = !empty($listing['price_yearly']) && (float)$listing['price_yearly'] > 0;
+
+        // Validate duration vs payment schedule match rules:
+        // I. Sewa Bulanan (1..5 bulan): payment_schedule must be monthly or full_upfront
+        // II. Sewa Enam Bulan (6 bulan): payment_schedule must be full_upfront
+        // III. Sewa Tahunan (12 bulan): payment_schedule must be yearly or full_upfront
+        if (in_array($durationMonths, [1, 2, 3, 4, 5])) {
+            if (! $hasMonthly) {
+                return redirect()->back()->withInput()->with('error', 'Listing ini tidak menyediakan pilihan sewa bulanan.');
+            }
+            if (! in_array($paymentSchedule, ['monthly', 'full_upfront'])) {
+                return redirect()->back()->withInput()->with('error', 'Untuk sewa bulanan, skema pembayaran yang tersedia adalah Bayar Bulanan atau Lunas di Awal.');
+            }
+        } elseif ($durationMonths === 6) {
+            if (! $hasSixMonthly) {
+                return redirect()->back()->withInput()->with('error', 'Listing ini tidak menyediakan pilihan sewa enam bulan.');
+            }
+            if ($paymentSchedule !== 'full_upfront') {
+                return redirect()->back()->withInput()->with('error', 'Untuk sewa enam bulan, skema pembayaran hanya tersedia Lunas di Awal (Full Upfront).');
+            }
+        } elseif ($durationMonths === 12) {
+            if (! $hasYearly) {
+                return redirect()->back()->withInput()->with('error', 'Listing ini tidak menyediakan pilihan sewa tahunan.');
+            }
+            if ($paymentSchedule !== 'full_upfront') {
+                return redirect()->back()->withInput()->with('error', 'Untuk sewa tahunan, skema pembayaran hanya tersedia Lunas di Awal (Full Upfront).');
+            }
+        } else {
+            return redirect()->back()->withInput()->with('error', 'Pilihan durasi sewa tidak sesuai dengan jenis listing.');
+        }
+
+        // Calculate rental amount
+        $monthlyPrice    = !empty($listing['price_monthly']) ? (float) $listing['price_monthly'] : 0.0;
+        $sixMonthlyPrice = !empty($listing['price_six_monthly']) ? (float) $listing['price_six_monthly'] : ($monthlyPrice * 6);
         $yearlyPrice     = !empty($listing['price_yearly']) ? (float) $listing['price_yearly'] : ($monthlyPrice * 12);
 
-        $rentalAmount = match ($paymentSchedule) {
-            'monthly'      => $monthlyPrice,
-            '3_monthly'    => $monthlyPrice * min(3, $durationMonths),
-            '6_monthly'    => $sixMonthlyPrice,
-            'yearly'       => ($durationMonths >= 12 && !empty($listing['price_yearly'])) ? $yearlyPrice : ($monthlyPrice * 12),
-            'full_upfront' => ($durationMonths >= 12 && !empty($listing['price_yearly'])) ? ($yearlyPrice * floor($durationMonths / 12) + ($monthlyPrice * ($durationMonths % 12))) : ($monthlyPrice * $durationMonths),
-            default        => $monthlyPrice,
-        };
+        if ($durationMonths === 12) {
+            $rentalAmount = $yearlyPrice;
+        } elseif ($durationMonths === 6) {
+            $rentalAmount = $sixMonthlyPrice;
+        } else {
+            if ($paymentSchedule === 'monthly') {
+                $rentalAmount = $monthlyPrice;
+            } else {
+                $rentalAmount = $monthlyPrice * $durationMonths;
+            }
+        }
 
         // Handle marriage certificate upload if provided
         $marriageCertUrl = null;

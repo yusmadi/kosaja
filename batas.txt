@@ -3,8 +3,9 @@ ISI FILE INI TIDAK PERLU DI-ANALIZE
 File ini berisi catatan pribadi pengembang, tidak perlu dianalisa dalam pengembangan aplikasi
 
 batas
-   uji tampilan user dan pemesanan. ke http://localhost:8080/
+   halaman "Pengajuan Sewa Hunian" selesai diperbaiki (http://localhost:8080/apply/21),
+   selanjutnya uji tombol "Kirim Pengajuan Sewa"
 
 selanjutnya
-   uji tampilan user dan pemesanan. ke http://localhost:8080/
+   uji tombol "Kirim Pengajuan Sewa"
 
