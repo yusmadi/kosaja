@@ -34,7 +34,7 @@ class Subscription extends BaseController
      */
     public function index()
     {
-        $providerId = session()->get('user_id') ?? 3;
+        $providerId = (int) (session()->get('user_id') ?? 3);
 
         // Auto-expire pending invoices that passed due_date
         $this->invoiceModel->where('provider_id', $providerId)
@@ -79,7 +79,7 @@ class Subscription extends BaseController
      */
     public function checkout(int $planId)
     {
-        $providerId = session()->get('user_id') ?? 3;
+        $providerId = (int) (session()->get('user_id') ?? 3);
         $plan = $this->planModel->find($planId);
 
         if (! $plan || ! $plan['is_active']) {
@@ -143,7 +143,7 @@ class Subscription extends BaseController
      */
     public function simulate(int $invoiceId)
     {
-        $providerId = session()->get('user_id') ?? 3;
+        $providerId = (int) (session()->get('user_id') ?? 3);
         $invoice = $this->invoiceModel->find($invoiceId);
 
         if (! $invoice || (int) $invoice['provider_id'] !== $providerId) {
@@ -166,10 +166,16 @@ class Subscription extends BaseController
      */
     public function executeSimulation(int $invoiceId)
     {
-        $providerId = session()->get('user_id') ?? 3;
+        $providerId = (int) (session()->get('user_id') ?? 3);
         $invoice = $this->invoiceModel->find($invoiceId);
 
         if (! $invoice || (int) $invoice['provider_id'] !== $providerId) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => 'Tagihan tidak ditemukan.',
+                ]);
+            }
             return redirect()->to(base_url('/provider/subscription'))->with('error', 'Tagihan tidak ditemukan.');
         }
 
@@ -187,6 +193,14 @@ class Subscription extends BaseController
         $webhook = new \App\Controllers\Webhook();
         $webhook->payment($payload);
 
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success'      => ($action === 'success'),
+                'message'      => ($action === 'success') ? 'Pembayaran berhasil diproses! Kuota paket telah aktif.' : 'Pembayaran dibatalkan atau gagal.',
+                'redirect_url' => base_url('/provider/subscription'),
+            ]);
+        }
+
         if ($action === 'success') {
             return redirect()->to(base_url('/provider/subscription'))->with('success', 'Pembayaran berhasil diproses! Kuota paket telah aktif.');
         }
@@ -195,26 +209,53 @@ class Subscription extends BaseController
     }
 
     /**
-     * Cancel a pending or expired provider invoice
+     * Cancel or delete a pending, expired, or cancelled provider invoice
      */
     public function cancelInvoice(int $invoiceId)
     {
-        $providerId = session()->get('user_id') ?? 3;
+        $providerId = (int) (session()->get('user_id') ?? 3);
         $invoice = $this->invoiceModel->find($invoiceId);
 
         if (! $invoice || (int) $invoice['provider_id'] !== $providerId) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => 'Tagihan tidak ditemukan.',
+                ]);
+            }
             return redirect()->to(base_url('/provider/subscription'))->with('error', 'Tagihan tidak ditemukan.');
         }
 
-        if (! in_array($invoice['status'], ['pending', 'expired'])) {
-            return redirect()->to(base_url('/provider/subscription'))->with('error', 'Tagihan ini tidak dapat dibatalkan karena sudah diproses atau lunas.');
+        if (! in_array($invoice['status'], ['pending', 'expired', 'cancelled'])) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => 'Tagihan ini tidak dapat dibatalkan atau dihapus karena sudah diproses atau lunas.',
+                ]);
+            }
+            return redirect()->to(base_url('/provider/subscription'))->with('error', 'Tagihan ini tidak dapat dibatalkan atau dihapus karena sudah diproses atau lunas.');
         }
 
-        $this->invoiceModel->update($invoiceId, [
-            'status' => 'cancelled',
-        ]);
+        $action = $this->request->getPost('action') ?? 'cancel';
 
-        return redirect()->to(base_url('/provider/subscription'))->with('success', 'Tagihan ' . esc($invoice['invoice_number']) . ' berhasil dibatalkan.');
+        if ($action === 'delete' || $invoice['status'] === 'cancelled' || $invoice['status'] === 'expired') {
+            $this->invoiceModel->delete($invoiceId);
+            $msg = 'Tagihan ' . esc($invoice['invoice_number']) . ' berhasil dihapus dari riwayat.';
+        } else {
+            $this->invoiceModel->update($invoiceId, [
+                'status' => 'cancelled',
+            ]);
+            $msg = 'Tagihan ' . esc($invoice['invoice_number']) . ' berhasil dibatalkan.';
+        }
+
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => $msg,
+            ]);
+        }
+
+        return redirect()->to(base_url('/provider/subscription'))->with('success', $msg);
     }
 
     /**
@@ -222,7 +263,7 @@ class Subscription extends BaseController
      */
     public function invoiceReceipt(int $invoiceId)
     {
-        $providerId = session()->get('user_id') ?? 3;
+        $providerId = (int) (session()->get('user_id') ?? 3);
         $invoice = $this->invoiceModel->find($invoiceId);
 
         if (! $invoice || (int) $invoice['provider_id'] !== $providerId) {

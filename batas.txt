@@ -1,10 +1,10 @@
+ISI FILE INI TIDAK PERLU DI-ANALIZE
+
 File ini berisi catatan pribadi pengembang, tidak perlu dianalisa dalam pengembangan aplikasi
 
 batas
-   tombol "bayar" (di tabel "Riwayat Tagihan & Pembayaran Paket") 
-   pada halaman "http://localhost:8080/provider/subscription"
-   tidak berfungsi sebagaimana mestinya
+   uji tampilan user dan pemesanan. ke http://localhost:8080/
 
 selanjutnya
-   perbaiki tombol "Bayar"
+   uji tampilan user dan pemesanan. ke http://localhost:8080/
 

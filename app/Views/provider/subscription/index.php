@@ -474,15 +474,19 @@
                                         <button type="button" class="btn btn-secondary btn-xs px-2" disabled title="Tagihan telah melewati batas waktu pembayaran">
                                             <i class="fas fa-ban mr-1"></i> Kadaluarsa
                                         </button>
-                                        <button type="button" class="btn btn-outline-danger btn-xs px-2 ml-1" title="Hapus / Batalkan Tagihan" onclick="cancelPendingInvoice(<?= $inv['id'] ?>, '<?= esc($inv['invoice_number']) ?>')">
+                                        <button type="button" class="btn btn-outline-danger btn-xs px-2 ml-1" title="Hapus / Batalkan Tagihan" onclick="confirmCancelOrDeleteInvoice(<?= $inv['id'] ?>, '<?= esc($inv['invoice_number']) ?>', 'delete')">
                                             <i class="fas fa-trash-alt"></i>
                                         </button>
                                     <?php elseif ($inv['status'] === 'pending'): ?>
                                         <button type="button" class="btn btn-teal btn-xs text-white font-weight-bold px-3 shadow-sm" data-toggle="modal" data-target="#payModal-<?= $inv['id'] ?>" data-bs-toggle="modal" data-bs-target="#payModal-<?= $inv['id'] ?>">
                                             <i class="fas fa-credit-card mr-1"></i> Bayar
                                         </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-xs px-2 ml-1" title="Batalkan Tagihan" onclick="cancelPendingInvoice(<?= $inv['id'] ?>, '<?= esc($inv['invoice_number']) ?>')">
+                                        <button type="button" class="btn btn-outline-secondary btn-xs px-2 ml-1" title="Batalkan Tagihan" onclick="confirmCancelOrDeleteInvoice(<?= $inv['id'] ?>, '<?= esc($inv['invoice_number']) ?>', 'cancel')">
                                             <i class="fas fa-times"></i>
+                                        </button>
+                                    <?php elseif ($inv['status'] === 'cancelled'): ?>
+                                        <button type="button" class="btn btn-outline-danger btn-xs px-2" title="Hapus Tagihan Dibatalkan" onclick="confirmCancelOrDeleteInvoice(<?= $inv['id'] ?>, '<?= esc($inv['invoice_number']) ?>', 'delete')">
+                                            <i class="fas fa-trash-alt mr-1"></i> Hapus
                                         </button>
                                     <?php else: ?>
                                         <span class="text-muted small"><i class="fas fa-ban mr-1"></i> Selesai</span>
@@ -521,7 +525,7 @@
                             </button>
                         </div>
                         
-                        <form action="<?= base_url('/provider/subscription/simulate-execute/' . $inv['id']) ?>" method="POST" id="formPay-<?= $inv['id'] ?>">
+                        <form action="<?= base_url('/provider/subscription/simulate-execute/' . $inv['id']) ?>" method="POST" id="formPay-<?= $inv['id'] ?>" onsubmit="return handlePaymentSubmit(this, <?= $inv['id'] ?>)">
                             <?= csrf_field() ?>
                             <input type="hidden" name="action" value="success">
                             <div class="modal-body p-4 text-left">
@@ -625,7 +629,7 @@
 
                             <div class="modal-footer bg-light border-0 py-3 px-4 d-flex justify-content-between align-items-center">
                                 <div>
-                                    <button type="button" class="btn btn-outline-danger btn-sm font-weight-bold" onclick="cancelPendingInvoice(<?= $inv['id'] ?>, '<?= esc($inv['invoice_number']) ?>')">
+                                    <button type="button" class="btn btn-outline-danger btn-sm font-weight-bold" onclick="confirmCancelOrDeleteInvoice(<?= $inv['id'] ?>, '<?= esc($inv['invoice_number']) ?>', 'cancel')">
                                         <i class="fas fa-times mr-1"></i> Batalkan Tagihan
                                     </button>
                                 </div>
@@ -633,7 +637,7 @@
                                     <button type="button" class="btn btn-secondary btn-sm px-3 mr-2 font-weight-bold" data-dismiss="modal" data-bs-dismiss="modal">
                                         Tutup
                                     </button>
-                                    <button type="button" id="btnPaySubmit-<?= $inv['id'] ?>" class="btn btn-teal text-white btn-sm px-4 font-weight-bold shadow-sm" onclick="submitPaymentSimulation(<?= $inv['id'] ?>)">
+                                    <button type="submit" id="btnPaySubmit-<?= $inv['id'] ?>" class="btn btn-teal text-white btn-sm px-4 font-weight-bold shadow-sm">
                                         <i class="fas fa-check-circle mr-1"></i> Bayar Sekarang (Simulasi Lunas)
                                     </button>
                                 </div>
@@ -722,9 +726,10 @@
             </div>
         <?php endif; ?>
 
-        <!-- 3. HIDDEN CANCEL FORM -->
+        <!-- 3. HIDDEN CANCEL / DELETE FORM -->
         <form id="cancelForm-<?= $inv['id'] ?>" action="<?= base_url('/provider/subscription/cancel/' . $inv['id']) ?>" method="POST" style="display: none;">
             <?= csrf_field() ?>
+            <input type="hidden" name="action" id="cancelAction-<?= $inv['id'] ?>" value="cancel">
         </form>
 
     <?php endforeach; ?>
@@ -819,53 +824,183 @@
     <script src="<?= $paymentConfig->isProduction ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js' ?>" data-client-key="<?= esc($paymentConfig->clientKey) ?>"></script>
 <?php endif; ?>
 <script>
+function handlePaymentSubmit(form, invoiceId) {
+    var btn = document.getElementById('btnPaySubmit-' + invoiceId);
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Memproses...';
+        btn.classList.add('disabled');
+        setTimeout(function() {
+            if (btn) btn.disabled = true;
+        }, 100);
+    }
+    return true;
+}
+
 function submitPaymentSimulation(invoiceId) {
     var form = document.getElementById('formPay-' + invoiceId);
     if (form) {
         var btn = document.getElementById('btnPaySubmit-' + invoiceId);
         if (btn) {
-            btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Memproses...';
+            btn.classList.add('disabled');
+            setTimeout(function() {
+                if (btn) btn.disabled = true;
+            }, 100);
         }
-        form.submit();
+        if (typeof form.requestSubmit === 'function') {
+            form.requestSubmit();
+        } else {
+            HTMLFormElement.prototype.submit.call(form);
+        }
     } else {
         console.error('Payment form not found for invoice id: ' + invoiceId);
     }
 }
 
-function cancelPendingInvoice(invoiceId, invoiceNumber) {
-    if (confirm('Apakah Anda yakin ingin membatalkan pesanan tagihan #' + invoiceNumber + '? Status tagihan akan diubah menjadi Dibatalkan.')) {
-        var form = document.getElementById('cancelForm-' + invoiceId);
-        if (form) {
-            form.submit();
-        } else {
-            console.error('Cancel form not found for invoice id: ' + invoiceId);
+function confirmCancelOrDeleteInvoice(invoiceId, invoiceNumber, action) {
+    action = action || 'cancel';
+    var isDelete = (action === 'delete');
+    
+    var title = isDelete ? 'Hapus Tagihan?' : 'Batalkan Tagihan?';
+    var textHtml = isDelete 
+        ? 'Apakah Anda yakin ingin menghapus riwayat tagihan <strong>#' + invoiceNumber + '</strong>?<br><small class="text-muted d-block mt-2">Data tagihan ini akan dihapus permanen dari daftar transaksi Anda.</small>'
+        : 'Apakah Anda yakin ingin membatalkan tagihan <strong>#' + invoiceNumber + '</strong>?<br><small class="text-muted d-block mt-2">Status tagihan akan diubah menjadi Dibatalkan dan tidak dapat diproses lagi.</small>';
+    var confirmText = isDelete 
+        ? '<i class="fas fa-trash-alt mr-1"></i> Ya, Hapus Tagihan'
+        : '<i class="fas fa-times mr-1"></i> Ya, Batalkan Tagihan';
+
+    Swal.fire({
+        title: title,
+        html: textHtml,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: confirmText,
+        cancelButtonText: 'Kembali',
+        reverseButtons: true,
+        focusCancel: true,
+        customClass: {
+            confirmButton: 'btn btn-danger px-3 py-2 mx-1 font-weight-bold',
+            cancelButton: 'btn btn-secondary px-3 py-2 mx-1 font-weight-bold'
+        },
+        buttonsStyling: false
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Sedang Memproses...',
+                text: isDelete ? 'Menghapus tagihan dari daftar...' : 'Membatalkan pesanan tagihan...',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: function() {
+                    Swal.showLoading();
+                }
+            });
+
+            var form = document.getElementById('cancelForm-' + invoiceId);
+            if (form) {
+                var actionInput = document.getElementById('cancelAction-' + invoiceId);
+                if (actionInput) {
+                    actionInput.value = action;
+                }
+                form.submit();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Formulir Tidak Ditemukan',
+                    text: 'Tidak dapat menemukan form untuk memproses tagihan #' + invoiceNumber,
+                    confirmButtonColor: '#0d9488'
+                });
+            }
         }
-    }
+    });
+}
+
+function cancelPendingInvoice(invoiceId, invoiceNumber) {
+    confirmCancelOrDeleteInvoice(invoiceId, invoiceNumber, 'cancel');
 }
 
 function triggerSnapPayment(snapToken) {
     if (window.snap && typeof window.snap.pay === 'function') {
         window.snap.pay(snapToken, {
             onSuccess: function(result) {
-                window.location.reload();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Pembayaran Berhasil!',
+                    text: 'Transaksi pembayaran berhasil diverifikasi.',
+                    confirmButtonColor: '#0d9488',
+                    confirmButtonText: 'OK'
+                }).then(function() {
+                    window.location.reload();
+                });
             },
             onPending: function(result) {
-                window.location.reload();
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Menunggu Pembayaran',
+                    text: 'Silakan selesaikan pembayaran sesuai instruksi invoice Anda.',
+                    confirmButtonColor: '#0d9488',
+                    confirmButtonText: 'OK'
+                }).then(function() {
+                    window.location.reload();
+                });
             },
             onError: function(result) {
-                alert('Pembayaran tidak berhasil atau dibatalkan.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Pembayaran Terkendala',
+                    text: 'Pembayaran tidak berhasil atau dibatalkan.',
+                    confirmButtonColor: '#0d9488',
+                    confirmButtonText: 'Tutup'
+                });
             },
             onClose: function() {
-                console.log('Dialog pembayaran ditutup tanpa menyelesaikan transaksi.');
+                console.log('Dialog pembayaran Midtrans Snap ditutup.');
             }
         });
     } else {
-        alert('Fitur Midtrans Snap SDK saat ini aktif dalam mode simulasi. Silakan gunakan tombol "Bayar Sekarang (Simulasi Lunas)" di dalam modal.');
+        Swal.fire({
+            icon: 'info',
+            title: 'Sandbox Simulasi',
+            html: 'Fitur Midtrans Snap SDK saat ini aktif dalam mode simulasi.<br><br>Silakan gunakan tombol <strong>"Bayar Sekarang (Simulasi Lunas)"</strong> di dalam modal.',
+            confirmButtonColor: '#0d9488',
+            confirmButtonText: 'Mengerti',
+            customClass: {
+                confirmButton: 'btn btn-teal px-4 font-weight-bold'
+            },
+            buttonsStyling: false
+        });
     }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // SweetAlert2 Flash Alerts
+    <?php if (session()->getFlashdata('success')): ?>
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil',
+            text: <?= json_encode(session()->getFlashdata('success')) ?>,
+            confirmButtonColor: '#0d9488',
+            confirmButtonText: 'OK',
+            customClass: {
+                confirmButton: 'btn btn-teal px-4 font-weight-bold'
+            },
+            buttonsStyling: false
+        });
+    <?php elseif (session()->getFlashdata('error')): ?>
+        Swal.fire({
+            icon: 'error',
+            title: 'Pemberitahuan',
+            text: <?= json_encode(session()->getFlashdata('error')) ?>,
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Tutup',
+            customClass: {
+                confirmButton: 'btn btn-danger px-4 font-weight-bold'
+            },
+            buttonsStyling: false
+        });
+    <?php endif; ?>
+
     // Relocate modals to document.body to prevent backdrop stacking context traps in AdminLTE
     document.querySelectorAll('.modal').forEach(function(modal) {
         if (modal.parentElement !== document.body) {
