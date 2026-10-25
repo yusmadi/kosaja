@@ -83,11 +83,19 @@ class PropertySeeder extends Seeder
 
         // 3. Property Photos
         $photos = [
-            ['property_id' => 1, 'photo_url' => 'assets/images/sample-kos-1.jpg', 'caption' => 'Tampak Depan Gedung Kos', 'is_primary' => 1, 'created_at' => $now, 'updated_at' => $now],
-            ['property_id' => 2, 'photo_url' => 'assets/images/sample-kos-2.jpg', 'caption' => 'Fasad Kos Modern', 'is_primary' => 1, 'created_at' => $now, 'updated_at' => $now],
-            ['property_id' => 3, 'photo_url' => 'assets/images/sample-kos-3.jpg', 'caption' => 'Tampak Depan Rumah Kontrakan', 'is_primary' => 1, 'created_at' => $now, 'updated_at' => $now],
+            ['property_id' => 1, 'photo_url' => 'assets/images/exterior-kos-1.jpg', 'caption' => 'Tampak Depan Gedung Kos', 'is_primary' => 1, 'created_at' => $now, 'updated_at' => $now],
+            ['property_id' => 2, 'photo_url' => 'assets/images/exterior-kos-2.jpg', 'caption' => 'Fasad Kos Modern', 'is_primary' => 1, 'created_at' => $now, 'updated_at' => $now],
+            ['property_id' => 3, 'photo_url' => 'assets/images/exterior-kos-3.jpg', 'caption' => 'Tampak Depan Rumah Kontrakan', 'is_primary' => 1, 'created_at' => $now, 'updated_at' => $now],
         ];
         $this->db->table('property_photos')->ignore(true)->insertBatch($photos);
+
+        // 3b. Unit Photos (Inside Kamar)
+        $unitPhotos = [
+            ['unit_id' => 1, 'photo_url' => 'assets/images/sample-kos-1.jpg', 'caption' => 'Inside Kamar Tidur & Meja Belajar', 'is_primary' => 1, 'created_at' => $now, 'updated_at' => $now],
+            ['unit_id' => 3, 'photo_url' => 'assets/images/sample-kos-2.jpg', 'caption' => 'Inside Kamar Deluxe & Setup Kerja', 'is_primary' => 1, 'created_at' => $now, 'updated_at' => $now],
+            ['unit_id' => 4, 'photo_url' => 'assets/images/sample-kos-3.jpg', 'caption' => 'Inside Ruang Tamu & Kamar Paviliun', 'is_primary' => 1, 'created_at' => $now, 'updated_at' => $now],
+        ];
+        $this->db->table('unit_photos')->ignore(true)->insertBatch($unitPhotos);
 
         // 4. Units
         $units = [

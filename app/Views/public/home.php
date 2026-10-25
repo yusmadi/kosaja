@@ -78,15 +78,59 @@
         <div class="row g-4" id="listingsContainer">
             <?php if (!empty($listings)): ?>
                 <?php foreach ($listings as $item): ?>
-                    <?php $isFav = in_array((int)$item['id'], $userFavorites ?? []); ?>
+                    <?php 
+                        $isFav = in_array((int)$item['id'], $userFavorites ?? []); 
+                        $propPhoto = !empty($item['property_photo']) ? $item['property_photo'] : 'assets/images/exterior-kos-1.jpg';
+                        $unitPhoto = !empty($item['unit_photo']) ? $item['unit_photo'] : 'assets/images/sample-kos-1.jpg';
+                    ?>
                     <div class="col-md-6 col-lg-4 property-card-col" 
                          data-gender="<?= esc($item['target_gender']) ?>" 
                          data-type="<?= esc($item['type']) ?>">
                         <div class="property-card">
-                            <div class="property-img-wrapper position-relative">
-                                <img src="<?= base_url(esc($item['photo_url'] ?? 'assets/images/sample-kos-1.jpg')) ?>" 
-                                     alt="<?= esc($item['title']) ?>" 
-                                     class="property-img">
+                            <div class="property-img-wrapper position-relative" data-active-view="property">
+                                <!-- Main Photos: Property Exterior & Inside Kamar -->
+                                <a href="<?= base_url('/listing/' . $item['id']) ?>" class="photo-link-wrapper" title="<?= esc($item['title']) ?>">
+                                    <img src="<?= base_url(esc($propPhoto)) ?>" 
+                                         alt="<?= esc($item['title']) ?> - Foto Gedung Properti" 
+                                         class="property-img img-property-view"
+                                         loading="lazy">
+                                    <img src="<?= base_url(esc($unitPhoto)) ?>" 
+                                         alt="<?= esc($item['unit_name']) ?> - Inside Kamar" 
+                                         class="property-img img-inside-view"
+                                         loading="lazy">
+                                </a>
+
+                                <!-- View Switcher Pills (Gedung & Inside Kamar) -->
+                                <div class="photo-view-switcher" onclick="event.stopPropagation();">
+                                    <button type="button" 
+                                            class="view-pill active" 
+                                            data-target="property" 
+                                            onclick="switchCardPhoto(this, 'property', event)"
+                                            title="Tampilkan foto tampak depan gedung">
+                                        <i class="bi bi-building me-1"></i> Gedung
+                                    </button>
+                                    <button type="button" 
+                                            class="view-pill" 
+                                            data-target="inside" 
+                                            onclick="switchCardPhoto(this, 'inside', event)"
+                                            title="Tampilkan foto kamar tidur (inside)">
+                                        <i class="bi bi-door-open-fill me-1"></i> Inside Kamar
+                                    </button>
+                                </div>
+
+                                <!-- Inset Mini Thumbnail (Displays Room photo when property view is active, and vice versa) -->
+                                <div class="photo-inset-preview" 
+                                     onclick="toggleCardPhotoInset(this, event)"
+                                     title="Klik untuk melihat foto kamar tidur (inside)"
+                                     data-property-src="<?= base_url(esc($propPhoto)) ?>"
+                                     data-inside-src="<?= base_url(esc($unitPhoto)) ?>">
+                                    <img src="<?= base_url(esc($unitPhoto)) ?>" 
+                                         alt="Inside Kamar" 
+                                         class="inset-img">
+                                    <div class="inset-badge">
+                                        <i class="bi bi-door-open-fill me-1 text-teal"></i> <span class="inset-text">Inside</span>
+                                    </div>
+                                </div>
                                 
                                 <!-- Favorite Heart Button -->
                                 <button type="button" 
@@ -118,8 +162,9 @@
                                         <?= esc($item['title']) ?>
                                     </a>
                                 </h3>
-                                <div class="small text-muted mb-2">
-                                    <i class="bi bi-door-open me-1 text-teal"></i> <?= esc($item['unit_name']) ?> (<?= esc($item['unit_size'] ?? '3x4 m') ?>)
+                                <div class="small text-muted mb-2 d-flex align-items-center justify-content-between">
+                                    <div><i class="bi bi-door-open me-1 text-teal"></i> <?= esc($item['unit_name']) ?> (<?= esc($item['unit_size'] ?? '3x4 m') ?>)</div>
+                                    <span class="badge bg-light text-secondary border px-2 py-1"><i class="bi bi-images text-teal me-1"></i> Properti & Inside</span>
                                 </div>
                                 <p class="text-muted small mb-3 flex-grow-1" style="font-size: 0.85rem; line-height: 1.4;">
                                     <?= character_limiter(esc($item['description']), 85) ?>
@@ -304,6 +349,64 @@
             }
         })
         .catch(err => console.error('Error toggling favorite:', err));
+    }
+
+    // Switch between Property and Inside Kamar photo view
+    function switchCardPhoto(btn, targetView, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        const wrapper = btn.closest('.property-img-wrapper');
+        if (!wrapper) return;
+
+        wrapper.setAttribute('data-active-view', targetView);
+        
+        // Update pills
+        wrapper.querySelectorAll('.view-pill').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Update inset preview thumbnail and label
+        const inset = wrapper.querySelector('.photo-inset-preview');
+        if (inset) {
+            const insetImg = inset.querySelector('.inset-img');
+            const insetText = inset.querySelector('.inset-text');
+            const insetIcon = inset.querySelector('.inset-badge i');
+            
+            if (targetView === 'inside') {
+                // Main is showing inside, so inset shows property exterior
+                insetImg.src = inset.dataset.propertySrc;
+                insetText.textContent = 'Gedung';
+                insetIcon.className = 'bi bi-building me-1 text-teal';
+                inset.title = 'Klik untuk kembali ke foto tampak depan gedung';
+            } else {
+                // Main is showing property, so inset shows inside kamar
+                insetImg.src = inset.dataset.insideSrc;
+                insetText.textContent = 'Inside';
+                insetIcon.className = 'bi bi-door-open-fill me-1 text-teal';
+                inset.title = 'Klik untuk melihat foto kamar tidur (inside)';
+            }
+        }
+    }
+
+    // Toggle photo when clicking inset thumbnail
+    function toggleCardPhotoInset(inset, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        const wrapper = inset.closest('.property-img-wrapper');
+        if (!wrapper) return;
+
+        const currentView = wrapper.getAttribute('data-active-view') || 'property';
+        const nextView = currentView === 'property' ? 'inside' : 'property';
+
+        const targetPill = wrapper.querySelector(`.view-pill[data-target="${nextView}"]`);
+        if (targetPill) {
+            switchCardPhoto(targetPill, nextView, event);
+        } else {
+            wrapper.setAttribute('data-active-view', nextView);
+        }
     }
 </script>
 <?= $this->endSection() ?>
