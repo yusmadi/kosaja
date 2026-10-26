@@ -70,6 +70,11 @@ $routes->group('admin', ['filter' => 'role:super_admin,admin_daerah'], static fu
     $routes->get('restrictions/lift/(:num)', 'Admin\Restrictions::lift/$1');
 
     $routes->get('regional-reports', 'Admin\RegionalReports::index');
+
+    // Provider Payout Settlements (Maker-Checker: Admin Daerah verifies/recommends, Super Admin authorizes)
+    $routes->get('settlements', 'Admin\Settlements::index');
+    $routes->post('settlements/verify/(:num)', 'Admin\Settlements::verify/$1');
+    $routes->post('settlements/hold/(:num)', 'Admin\Settlements::hold/$1');
 });
 
 // Super Admin Exclusive Backoffice Routes (Guarded by RBAC: super_admin only)
@@ -88,8 +93,7 @@ $routes->group('admin', ['filter' => 'role:super_admin'], static function ($rout
     // Global Financial Transactions Registry (SA-06)
     $routes->get('transactions', 'Admin\Transactions::index');
 
-    // Provider Payout Settlements (SA-07)
-    $routes->get('settlements', 'Admin\Settlements::index');
+    // Provider Payout Settlements Final Authorization & Execution (SA-07 - Checker)
     $routes->post('settlements/process/(:num)', 'Admin\Settlements::process/$1');
 
     // Platform Monetization & Pricing Policies (SA-10)

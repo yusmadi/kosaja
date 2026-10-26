@@ -37,6 +37,23 @@
     </div>
 </div>
 
+<?php if (($stats['pending_settlements'] ?? 0) > 0): ?>
+<div class="alert alert-warning border-0 shadow-sm mb-3 text-dark" style="background-color: #fef3c7; border-left: 4px solid #f59e0b !important;">
+    <div class="d-flex align-items-center justify-content-between flex-wrap">
+        <div>
+            <i class="fas fa-money-bill-transfer mr-2 fa-lg text-teal"></i>
+            <strong>Antrean Verifikasi Pencairan Sewa (Maker):</strong>
+            Terdapat <strong><?= esc($stats['pending_settlements']) ?> permohonan pencairan</strong> (Rp <?= number_format($stats['pending_settlements_amount'] ?? 0, 0, ',', '.') ?>) di wilayah <?= esc($scopedLabel) ?> yang membutuhkan konfirmasi lapangan Anda sebelum diteruskan ke Super Admin.
+        </div>
+        <div class="mt-2 mt-sm-0">
+            <a href="<?= base_url('/admin/settlements?status=pending') ?>" class="btn btn-sm btn-teal text-white font-weight-bold shadow-sm">
+                <i class="fas fa-clipboard-check mr-1"></i> Verifikasi Lapangan
+            </a>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- 4 Action Queue Cards (PRD 37.3 & UX 34 Minimal Requirements) -->
 <div class="row">
     <!-- PENDING VERIFICATION -->
@@ -406,6 +423,9 @@
                 <p class="small text-white-50 mb-3">Tindakan operasional lapangan dengan kewajiban input alasan resmi (PRD 5.3):</p>
                 
                 <div class="d-grid gap-2">
+                    <a href="<?= base_url('/admin/settlements') ?>" class="btn btn-sm btn-outline-teal text-left mb-2 d-block" style="color: #0d9488; border-color: #0d9488;">
+                        <i class="fas fa-money-bill-transfer mr-2"></i> Verifikasi Settlement Sewa Mitra
+                    </a>
                     <a href="<?= base_url('/admin/restrictions') ?>" class="btn btn-sm btn-outline-warning text-left mb-2 d-block">
                         <i class="fas fa-ban mr-2"></i> Kelola Restriksi / Sanksi Mitra
                     </a>

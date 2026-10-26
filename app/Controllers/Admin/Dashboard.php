@@ -63,10 +63,12 @@ class Dashboard extends BaseController
             $platformRevenue += (float) ($inv['gateway_fee'] ?? 4500);
         }
 
-        // Settlements
-        $totalSettled = (float) ($db->table('settlements')->where('status', 'completed')->selectSum('net_amount')->get()->getRow()->net_amount ?? 0);
-        $pendingSettlementsCount = $db->table('settlements')->where('status', 'pending')->countAllResults();
-        $pendingSettlementsAmount = (float) ($db->table('settlements')->where('status', 'pending')->selectSum('net_amount')->get()->getRow()->net_amount ?? 0);
+        // Settlements (Maker-Checker Pipeline)
+        $totalSettled              = (float) ($db->table('settlements')->where('status', 'completed')->selectSum('net_amount')->get()->getRow()->net_amount ?? 0);
+        $verifiedSettlementsCount  = $db->table('settlements')->where('status', 'verified')->countAllResults();
+        $verifiedSettlementsAmount = (float) ($db->table('settlements')->where('status', 'verified')->selectSum('net_amount')->get()->getRow()->net_amount ?? 0);
+        $pendingSettlementsCount   = $db->table('settlements')->where('status', 'pending')->countAllResults();
+        $pendingSettlementsAmount  = (float) ($db->table('settlements')->where('status', 'pending')->selectSum('net_amount')->get()->getRow()->net_amount ?? 0);
 
         // Refunds & Disputes
         $totalRefundsAmount = (float) ($db->table('refunds')->selectSum('amount')->get()->getRow()->amount ?? 0);
@@ -103,8 +105,10 @@ class Dashboard extends BaseController
             ];
         }
 
-        // 3. Pending Payouts / Settlements
-        $pendingSettlements = $this->settlementModel->getSettlementsWithDetails('pending');
+        // 3. Maker-Checker Payouts / Settlements (Verified ready for checker first, then pending maker)
+        $verifiedSettlements = $this->settlementModel->getSettlementsWithDetails('verified');
+        $pendingSettlements  = $this->settlementModel->getSettlementsWithDetails('pending');
+        $displaySettlements  = array_merge($verifiedSettlements, $pendingSettlements);
 
         // 4. Escalated Disputes
         $escalatedDisputeList = $this->disputeModel->getDisputesWithDetails(null, null, true);
@@ -117,25 +121,27 @@ class Dashboard extends BaseController
             'role'                => 'super_admin',
             'activeMenu'          => 'dashboard',
             'stats'               => [
-                'total_users'         => $totalUsers,
-                'total_tenants'       => $totalTenants,
-                'total_providers'     => $totalProviders,
-                'total_admin_daerah'  => $totalAdminDaerah,
-                'total_properties'    => $totalProperties,
-                'total_listings'      => $totalListings,
-                'published_listings'  => $publishedListings,
-                'pending_listings'    => $pendingListings,
-                'gtv'                 => $gtv,
-                'platform_revenue'    => $platformRevenue,
-                'total_settled'       => $totalSettled,
-                'pending_settlements_count' => $pendingSettlementsCount,
-                'pending_settlements_amount'=> $pendingSettlementsAmount,
-                'total_refunds_amount'=> $totalRefundsAmount,
-                'total_disputes'      => $totalDisputes,
-                'escalated_disputes'  => $escalatedDisputes,
+                'total_users'                 => $totalUsers,
+                'total_tenants'               => $totalTenants,
+                'total_providers'             => $totalProviders,
+                'total_admin_daerah'          => $totalAdminDaerah,
+                'total_properties'            => $totalProperties,
+                'total_listings'              => $totalListings,
+                'published_listings'          => $publishedListings,
+                'pending_listings'            => $pendingListings,
+                'gtv'                         => $gtv,
+                'platform_revenue'            => $platformRevenue,
+                'total_settled'               => $totalSettled,
+                'verified_settlements_count'  => $verifiedSettlementsCount,
+                'verified_settlements_amount' => $verifiedSettlementsAmount,
+                'pending_settlements_count'   => $pendingSettlementsCount,
+                'pending_settlements_amount'  => $pendingSettlementsAmount,
+                'total_refunds_amount'        => $totalRefundsAmount,
+                'total_disputes'              => $totalDisputes,
+                'escalated_disputes'          => $escalatedDisputes,
             ],
             'regionalPerformance' => $regionalPerformance,
-            'pendingSettlements'  => $pendingSettlements,
+            'pendingSettlements'  => $displaySettlements,
             'escalatedDisputes'   => $escalatedDisputeList,
             'recentAuditLogs'     => $recentAuditLogs,
         ]);
@@ -230,6 +236,11 @@ class Dashboard extends BaseController
         // Active Disputes Queue
         $disputesQueue = $adminRegionId ? $this->disputeModel->getDisputesWithDetails('opened', $adminRegionId) : [];
 
+        // Pending Settlements Queue for Admin Daerah verification (Maker)
+        $settlementsQueue = $this->settlementModel->getSettlementsWithDetails('pending', $scopedRegionIds);
+        $pendingSettlementsCount  = count($settlementsQueue);
+        $pendingSettlementsAmount = (float) array_sum(array_column($settlementsQueue, 'net_amount'));
+
         // Recent Regional Audit Logs scoped to regional jurisdiction
         $adminUserId = session()->get('user_id') ? (int) session()->get('user_id') : null;
         $recentAuditLogs = $this->auditModel->getRecentLogsForRegion($scopedRegionIds, $adminUserId, 8);
@@ -241,18 +252,21 @@ class Dashboard extends BaseController
             'scopedLabel'     => $scopedLabel,
             'clustersLabel'   => $clustersLabel,
             'stats'           => [
-                'pending_kyc'          => $pendingKYC,
-                'pending_listings'     => $pendingListings,
-                'open_reports'         => $openReports,
-                'open_disputes'        => $openDisputes,
-                'restricted_providers' => $restrictedProviders,
-                'inactive_listings'    => $inactiveListings,
+                'pending_kyc'                => $pendingKYC,
+                'pending_listings'           => $pendingListings,
+                'open_reports'               => $openReports,
+                'open_disputes'              => $openDisputes,
+                'restricted_providers'       => $restrictedProviders,
+                'inactive_listings'          => $inactiveListings,
+                'pending_settlements'        => $pendingSettlementsCount,
+                'pending_settlements_amount' => $pendingSettlementsAmount,
             ],
-            'providersQueue'  => $providersQueue,
-            'listingsQueue'   => $listingsQueue,
-            'reportsQueue'    => $reportsQueue,
-            'disputesQueue'   => $disputesQueue,
-            'recentAuditLogs' => $recentAuditLogs,
+            'providersQueue'   => $providersQueue,
+            'listingsQueue'    => $listingsQueue,
+            'reportsQueue'     => $reportsQueue,
+            'disputesQueue'    => $disputesQueue,
+            'settlementsQueue' => array_slice($settlementsQueue, 0, 5),
+            'recentAuditLogs'  => $recentAuditLogs,
         ]);
     }
 }

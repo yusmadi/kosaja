@@ -169,7 +169,7 @@
                                 <label class="payment-method-card p-3 border rounded-3 d-block cursor-pointer h-100">
                                     <input type="radio" name="payment_method" value="ewallet" class="form-check-input me-2">
                                     <strong class="text-dark d-block">E-Wallet Direct</strong>
-                                    <span class="small text-muted">GoPay / ShopeePay</span>
+                                    <span class="small text-muted">GoPay / ShopeePay / DANA</span>
                                     <small class="text-muted d-block mt-1">Koneksi langsung ke aplikasi dompet digital Anda</small>
                                 </label>
                             </div>

@@ -22,22 +22,36 @@
 </div>
 
 <!-- Alert Banner: Escalations & Payouts Waiting -->
-<?php if (($stats['escalated_disputes'] ?? 0) > 0 || ($stats['pending_settlements_count'] ?? 0) > 0): ?>
+<?php 
+$readyPayoutsCount = $stats['verified_settlements_count'] ?? 0;
+$readyPayoutsAmount = $stats['verified_settlements_amount'] ?? 0;
+$pendingMakerCount = $stats['pending_settlements_count'] ?? 0;
+if (($stats['escalated_disputes'] ?? 0) > 0 || $readyPayoutsCount > 0 || $pendingMakerCount > 0): 
+?>
 <div class="alert alert-warning border-0 shadow-sm mb-3">
     <div class="d-flex align-items-center justify-content-between flex-wrap">
         <div>
-            <i class="fas fa-triangle-exclamation mr-2 fa-lg"></i>
+            <i class="fas fa-triangle-exclamation mr-2 fa-lg text-warning"></i>
             <strong>Perhatian Eksekutif Super Admin:</strong> 
-            Terdapat <?= esc($stats['escalated_disputes']) ?> sengketa dieskalasi dari Admin Daerah &amp; 
-            <?= esc($stats['pending_settlements_count']) ?> pencairan dana mitra (Rp <?= number_format($stats['pending_settlements_amount'], 0, ',', '.') ?>) menunggu otorisasi Anda.
+            <?php if ($readyPayoutsCount > 0): ?>
+                <span class="badge badge-success px-2 py-1 mr-1"><i class="fas fa-check-double mr-1"></i> <?= esc($readyPayoutsCount) ?> Siap Transfer</span>
+                Sebanyak <?= esc($readyPayoutsCount) ?> pencairan sewa (Rp <?= number_format($readyPayoutsAmount, 0, ',', '.') ?>) telah diverifikasi Admin Daerah &amp; menunggu eksekusi transfer Anda.
+            <?php elseif ($pendingMakerCount > 0): ?>
+                Terdapat <?= esc($pendingMakerCount) ?> pencairan baru dalam antrean verifikasi lapangan Admin Daerah.
+            <?php endif; ?>
+            <?php if (($stats['escalated_disputes'] ?? 0) > 0): ?>
+                (Terdapat <?= esc($stats['escalated_disputes']) ?> sengketa dieskalasi dari daerah).
+            <?php endif; ?>
         </div>
         <div class="mt-2 mt-sm-0">
-            <a href="<?= base_url('/admin/settlements') ?>" class="btn btn-sm btn-dark mr-1">
+            <a href="<?= base_url('/admin/settlements' . ($readyPayoutsCount > 0 ? '?status=verified' : '')) ?>" class="btn btn-sm btn-dark mr-1">
                 <i class="fas fa-money-bill-transfer mr-1"></i> Otorisasi Settlement
             </a>
+            <?php if (($stats['escalated_disputes'] ?? 0) > 0): ?>
             <a href="<?= base_url('/admin/disputes?status=escalated') ?>" class="btn btn-sm btn-outline-dark">
                 <i class="fas fa-scale-balanced mr-1"></i> Tinjau Eskalasi
             </a>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -269,11 +283,18 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="badge badge-warning">Menunggu Otorisasi</span>
+                                    <?php if ($stl['status'] === 'verified'): ?>
+                                        <span class="badge badge-info"><i class="fas fa-check mr-1"></i> Siap Transfer</span>
+                                    <?php elseif ($stl['status'] === 'pending'): ?>
+                                        <span class="badge badge-warning text-dark"><i class="fas fa-clock mr-1"></i> Butuh Verifikasi Daerah</span>
+                                    <?php else: ?>
+                                        <span class="badge badge-secondary"><?= strtoupper($stl['status']) ?></span>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="text-right">
-                                    <a href="<?= base_url('/admin/settlements') ?>" class="btn btn-xs btn-success">
-                                        <i class="fas fa-check mr-1"></i> Proses
+                                    <a href="<?= base_url('/admin/settlements') ?>" class="btn btn-xs <?= $stl['status'] === 'verified' ? 'btn-success font-weight-bold' : 'btn-outline-secondary' ?>">
+                                        <i class="fas <?= $stl['status'] === 'verified' ? 'fa-money-bill-transfer' : 'fa-eye' ?> mr-1"></i>
+                                        <?= $stl['status'] === 'verified' ? 'Otorisasi' : 'Tinjau' ?>
                                     </a>
                                 </td>
                             </tr>

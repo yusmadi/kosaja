@@ -343,6 +343,13 @@
                                 <p>Sengketa &amp; Mediasi</p>
                             </a>
                         </li>
+                        <!-- ADM-09: Settlement Verification (Maker) -->
+                        <li class="nav-item">
+                            <a href="<?= base_url('/admin/settlements') ?>" class="nav-link <?= ($activeMenu ?? '') === 'settlements' ? 'active' : '' ?>">
+                                <i class="nav-icon fas fa-money-bill-transfer text-teal"></i>
+                                <p>Verifikasi Settlement</p>
+                            </a>
+                        </li>
                         <!-- ADM-10: Restrictions (Restriksi/Sanksi) -->
                         <li class="nav-item">
                             <a href="<?= base_url('/admin/restrictions') ?>" class="nav-link <?= ($activeMenu ?? '') === 'restrictions' ? 'active' : '' ?>">

@@ -267,7 +267,27 @@ class Webhook extends BaseController
                 );
             }
 
-            // 7. WhatsApp Critical Notifications
+            // 8. Generate Pending Settlement for Maker-Checker Pipeline
+            $property = $db->table('properties')->where('id', $reservation['property_id'])->get()->getRowArray();
+            $providerUser = $db->table('users')->where('id', $reservation['provider_id'])->get()->getRowArray();
+            $providerProfileData = $db->table('provider_profiles')->where('user_id', $reservation['provider_id'])->get()->getRowArray();
+
+            $settlementModel = new \App\Models\SettlementModel();
+            $settlementModel->insert([
+                'region_id'           => $property['region_id'] ?? ($providerUser['region_id'] ?? null),
+                'provider_id'         => (int) $reservation['provider_id'],
+                'contract_id'         => $contractId,
+                'gross_amount'        => $rentalAmount,
+                'platform_fee'        => 0.00,
+                'net_amount'          => $rentalAmount,
+                'bank_name'           => $providerProfileData['bank_name'] ?? 'Bank Syariah Indonesia (BSI)',
+                'bank_account_number' => $providerProfileData['bank_account_number'] ?? '-',
+                'bank_account_holder' => $providerUser['name'] ?? 'Mitra Pemilik',
+                'status'              => 'pending',
+                'notes'               => 'Penerimaan sewa pertama unit ' . ($reservation['unit_name'] ?? 'Kamar') . ' (' . ($reservation['tenant_name'] ?? 'Penyewa') . '). Menunggu verifikasi operasional lapangan Admin Daerah.',
+            ]);
+
+            // 9. WhatsApp Critical Notifications
             $fullContract = $this->contractModel->getContractWithDetails($contractId);
             $this->whatsappService->sendPaymentSuccessNotifications($fullContract, $invoiceData, $paymentData);
 
